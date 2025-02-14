@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,22 +86,31 @@ fun LoginScreen() {
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(99.dp))
+            Spacer(modifier = Modifier.height(159.dp))
 
             CustomTextField(value = email, onValueChange = { email = it }, label = "Email", isEmail = true)
             Spacer(modifier = Modifier.height(8.dp))
             CustomTextField(value = password, onValueChange = { password = it }, label = "Password", isPassword = true)
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(38.dp))
 
-            TextButton(onClick = { /* Forgot Password Logic */ }) {
+            TextButton(
+                onClick = { /* Forgot Password Logic */ },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(
-                    text = "Forgot Password?",
-                    fontSize = 14.sp,
-                    color = Color(0xFF53B175)
+                    text = "Forgot\nPassword?",
+                    fontSize = 11.sp,
+                    color = Color(0xFFA82C2C),
+                    textAlign = TextAlign.Start,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = { /* Log In Action */ },
