@@ -48,61 +48,68 @@ fun WelcomeScreen() {
             modifier = Modifier.fillMaxSize()
         )
 
-        Column(
+        // Contenido alineado en la parte inferior
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            contentAlignment = Alignment.BottomCenter // Alinea todo el contenido en la parte inferior
         ) {
-            // Icono de la aplicación
-            Image(
-                painter = painterResource(id = R.drawable.fruit_icon), // Verifica que esta imagen exista en res/drawable
-                contentDescription = "Fruit Icon",
-                modifier = Modifier.size(100.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Texto principal
-            Text(
-                text = "Welcome to the freshness",
-                fontSize = 28.sp,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            // Subtítulo
-            Text(
-                text = "Check the quality of your fruits",
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
-            )
-
-            // Botón estilizado
-            Button(
-                onClick = {
-                    // Acción al hacer clic en el botón
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
-                shape = RoundedCornerShape(50.dp),
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp), // Espaciado entre elementos
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 50.dp)
-                    .height(50.dp)
+                    .padding(bottom = 40.dp) // Ajusta el padding inferior para darle más margen
             ) {
-                Text(
-                    text = "Get Started",
-                    fontSize = 18.sp,
-                    color = Color.White
+                // Icono de la aplicación
+                Image(
+                    painter = painterResource(id = R.drawable.fruit_icon), // Verifica que esta imagen exista en res/drawable
+                    contentDescription = "Fruit Icon",
+                    modifier = Modifier.size(100.dp)
                 )
+
+                // Texto principal
+                Text(
+                    text = "Welcome to the freshness",
+                    fontSize = 28.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                // Subtítulo
+                Text(
+                    text = "Check the quality of your fruits",
+                    fontSize = 16.sp,
+                    color = Color.White.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Botón estilizado
+                Button(
+                    onClick = {
+                        // Acción al hacer clic en el botón
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
+                    shape = RoundedCornerShape(17.dp), // Bordes redondeados
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 50.dp)
+                        .height(50.dp)
+                ) {
+                    Text(
+                        text = "Get Started",
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

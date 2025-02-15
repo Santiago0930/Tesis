@@ -115,7 +115,7 @@ fun LoginScreen() {
             Button(
                 onClick = { /* Log In Action */ },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
-                shape = RoundedCornerShape(50.dp),
+                shape = RoundedCornerShape(17.dp), // Bordes redondeados
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)

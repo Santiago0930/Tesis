@@ -7,6 +7,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -105,12 +106,15 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
             Button(
                 onClick = onClearHistory,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71E20)),
+                shape = RoundedCornerShape(17.dp), // Bordes redondeados
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp)
+                    .height(50.dp) // Ajusta la altura para que se vea más boxy
             ) {
                 Text(text = "Clean History", color = Color.White, fontSize = 18.sp)
             }
+
 
             Spacer(modifier = Modifier.height(32.dp)) // Extra space at the bottom
         }
