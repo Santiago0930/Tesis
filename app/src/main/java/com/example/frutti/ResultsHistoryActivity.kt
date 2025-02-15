@@ -3,9 +3,7 @@ package com.example.frutti
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +19,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Modelo de datos para la fruta
 data class FruitItem(val name: String, val status: String, val image: Int, val isApproved: Boolean)
 
 class ResultsHistoryActivity : ComponentActivity() {
@@ -58,21 +55,27 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0x99FFFFFF)) // Semi-transparente para mejorar la visibilidad
+                .background(Color(0x99FFFFFF))
                 .padding(16.dp)
         ) {
             Text(
                 text = "Results History",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp)
+                    .wrapContentWidth(Alignment.CenterHorizontally)
             )
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(fruitList) { fruit ->
                     FruitListItem(fruit, onItemClick)
+                    Divider(color = Color.Gray.copy(alpha = 0.3f), thickness = 1.dp)
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = onClearHistory,
@@ -83,6 +86,8 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
             ) {
                 Text(text = "Clean History", color = Color.White, fontSize = 18.sp)
             }
+
+            Spacer(modifier = Modifier.height(32.dp)) // Espacio en blanco extra
         }
     }
 }
@@ -106,23 +111,22 @@ fun FruitListItem(fruit: FruitItem, onItemClick: (FruitItem) -> Unit) {
             Text(text = fruit.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Text(text = fruit.status, color = if (fruit.isApproved) Color.Green else Color.Red)
         }
-        Icon(
+        Image(
             painter = painterResource(id = if (fruit.isApproved) R.drawable.ic_check else R.drawable.ic_close),
             contentDescription = if (fruit.isApproved) "Approved" else "Not Approved",
-            tint = if (fruit.isApproved) Color.Green else Color.Red,
-            modifier = Modifier.size(24.dp)
+            //tint = if (fruit.isApproved) Color.Green else Color.Red,
+            modifier = Modifier
+                .size(42.dp)
+                .padding(end = 8.dp)
         )
         Icon(
             painter = painterResource(id = R.drawable.ic_arrow_right),
             contentDescription = "More Info",
-            modifier = Modifier
-                .size(24.dp)
-                .padding(start = 8.dp)
+            modifier = Modifier.size(24.dp)
         )
     }
 }
 
-// Preview para ResultsHistoryScreen
 @Preview(showBackground = true)
 @Composable
 fun PreviewResultsHistoryScreen() {
@@ -137,7 +141,6 @@ fun PreviewResultsHistoryScreen() {
     )
 }
 
-// Preview para FruitListItem
 @Preview(showBackground = true)
 @Composable
 fun PreviewFruitListItem() {
