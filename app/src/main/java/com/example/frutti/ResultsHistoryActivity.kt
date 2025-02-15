@@ -45,13 +45,6 @@ class ResultsHistoryActivity : ComponentActivity() {
 @Composable
 fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) -> Unit, onClearHistory: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            painter = painterResource(id = R.drawable.bg),
-            contentDescription = "Background Image",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -64,9 +57,33 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 20.dp)
+                    .padding(bottom = 8.dp)
                     .wrapContentWidth(Alignment.CenterHorizontally)
             )
+
+            // Tarjeta decorativa
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
+                elevation = CardDefaults.cardElevation(4.dp),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Check the freshness status of your detected fruits.",
+                        fontSize = 14.sp,
+                        color = Color(0xFF2E7D32),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre la tarjeta y la lista
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(fruitList) { fruit ->
@@ -87,10 +104,11 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
                 Text(text = "Clean History", color = Color.White, fontSize = 18.sp)
             }
 
-            Spacer(modifier = Modifier.height(32.dp)) // Espacio en blanco extra
+            Spacer(modifier = Modifier.height(32.dp)) // Espacio extra en la parte inferior
         }
     }
 }
+
 
 @Composable
 fun FruitListItem(fruit: FruitItem, onItemClick: (FruitItem) -> Unit) {
@@ -129,17 +147,31 @@ fun FruitListItem(fruit: FruitItem, onItemClick: (FruitItem) -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
+
 fun PreviewResultsHistoryScreen() {
     ResultsHistoryScreen(
         fruitList = listOf(
             FruitItem("Apple", "Fresh", R.drawable.ic_fruit, true),
             FruitItem("Banana", "Overripe", R.drawable.ic_fruit, false),
-            FruitItem("Mango", "Good", R.drawable.ic_fruit, true)
+            FruitItem("Mango", "Good", R.drawable.ic_fruit, true),
+            FruitItem("Grapes", "Ripe", R.drawable.ic_fruit, true),
+            FruitItem("Apple", "Fresh", R.drawable.ic_fruit, true),
+            FruitItem("Banana", "Overripe", R.drawable.ic_fruit, false),
+            FruitItem("Mango", "Good", R.drawable.ic_fruit, true),
+            FruitItem("Grapes", "Ripe", R.drawable.ic_fruit, true),
+            FruitItem("Orange", "Overripe", R.drawable.ic_fruit, false),
+            FruitItem("Strawberry", "Fresh", R.drawable.ic_fruit, true),
+            FruitItem("Pineapple", "Good", R.drawable.ic_fruit, true),
+            FruitItem("Orange", "Overripe", R.drawable.ic_fruit, false),
+            FruitItem("Strawberry", "Fresh", R.drawable.ic_fruit, true),
+            FruitItem("Pineapple", "Good", R.drawable.ic_fruit, true),
+            FruitItem("Pear", "Overripe", R.drawable.ic_fruit, false)
         ),
         onItemClick = {},
         onClearHistory = {}
     )
 }
+
 
 @Preview(showBackground = true)
 @Composable
