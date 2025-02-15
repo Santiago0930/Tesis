@@ -66,17 +66,19 @@ fun WelcomeScreen() {
                 Image(
                     painter = painterResource(id = R.drawable.fruit_icon), // Verifica que esta imagen exista en res/drawable
                     contentDescription = "Fruit Icon",
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(120.dp)
                 )
 
                 // Texto principal
                 Text(
                     text = "Welcome to the freshness",
-                    fontSize = 28.sp,
+                    fontSize = 38.sp,
                     color = Color.White,
                     textAlign = TextAlign.Center,
+                    lineHeight = 44.sp, // Ajusta la altura de línea para mejorar la legibilidad
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
+
 
                 // Subtítulo
                 Text(
@@ -97,11 +99,11 @@ fun WelcomeScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 50.dp)
-                        .height(50.dp)
+                        .height(60.dp)
                 ) {
                     Text(
                         text = "Get Started",
-                        fontSize = 18.sp,
+                        fontSize = 22.sp,
                         color = Color.White
                     )
                 }
