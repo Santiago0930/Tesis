@@ -45,10 +45,18 @@ class ResultsHistoryActivity : ComponentActivity() {
 @Composable
 fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) -> Unit, onClearHistory: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
+        // Background Image
+        Image(
+            painter = painterResource(id = R.drawable.bg), // Ensure you have 'bg' in your drawable resources
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0x99FFFFFF))
+                .background(Color(0x99FFFFFF)) // Semi-transparent white overlay for readability
                 .padding(16.dp)
         ) {
             Text(
@@ -61,7 +69,7 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
                     .wrapContentWidth(Alignment.CenterHorizontally)
             )
 
-            // Tarjeta decorativa
+            // Decorative Card
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
                 elevation = CardDefaults.cardElevation(4.dp),
@@ -83,7 +91,7 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre la tarjeta y la lista
+            Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(fruitList) { fruit ->
@@ -104,46 +112,57 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
                 Text(text = "Clean History", color = Color.White, fontSize = 18.sp)
             }
 
-            Spacer(modifier = Modifier.height(32.dp)) // Espacio extra en la parte inferior
+            Spacer(modifier = Modifier.height(32.dp)) // Extra space at the bottom
         }
     }
 }
+
 
 
 @Composable
 fun FruitListItem(fruit: FruitItem, onItemClick: (FruitItem) -> Unit) {
-    Row(
+    Column( // Cambiado de Row a Column para permitir más espacio
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp)
-            .clickable { onItemClick(fruit) },
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 16.dp) // Aumentar el padding vertical para más separación
+            .clickable { onItemClick(fruit) }
     ) {
-        Image(
-            painter = painterResource(id = fruit.image),
-            contentDescription = fruit.name,
-            modifier = Modifier.size(50.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = fruit.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(text = fruit.status, color = if (fruit.isApproved) Color.Green else Color.Red)
-        }
-        Image(
-            painter = painterResource(id = if (fruit.isApproved) R.drawable.ic_check else R.drawable.ic_close),
-            contentDescription = if (fruit.isApproved) "Approved" else "Not Approved",
-            //tint = if (fruit.isApproved) Color.Green else Color.Red,
+        Spacer(modifier = Modifier.height(8.dp)) // Más espacio entre elementos
+
+        Row(
             modifier = Modifier
-                .size(42.dp)
-                .padding(end = 8.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         )
-        Icon(
-            painter = painterResource(id = R.drawable.ic_arrow_right),
-            contentDescription = "More Info",
-            modifier = Modifier.size(24.dp)
-        )
+        {
+            Image(
+                painter = painterResource(id = fruit.image),
+                contentDescription = fruit.name,
+                modifier = Modifier.size(50.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = fruit.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(text = fruit.status, color = if (fruit.isApproved) Color.Green else Color.Red)
+            }
+            Image(
+                painter = painterResource(id = if (fruit.isApproved) R.drawable.ic_check else R.drawable.ic_close),
+                contentDescription = if (fruit.isApproved) "Approved" else "Not Approved",
+                modifier = Modifier
+                    .size(42.dp)
+                    .padding(end = 8.dp)
+            )
+            Icon(
+                painter = painterResource(id = R.drawable.ic_arrow_right),
+                contentDescription = "More Info",
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp)) // Más espacio entre elementos
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
