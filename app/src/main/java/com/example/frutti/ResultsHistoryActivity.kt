@@ -97,7 +97,7 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(fruitList) { fruit ->
                     FruitListItem(fruit, onItemClick)
-                    Divider(color = Color.Gray.copy(alpha = 0.3f), thickness = 1.dp)
+                    HorizontalDivider(thickness = 1.dp, color = Color.Gray.copy(alpha = 0.3f))
                 }
             }
 

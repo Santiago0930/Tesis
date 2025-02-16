@@ -3,6 +3,7 @@ package com.example.frutti
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -11,7 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -54,7 +56,6 @@ fun SignUpScreen() {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
     var passwordMatchError by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -97,7 +98,7 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(99.dp))
 
-            CustomTextField(value = username, onValueChange = { username = it }, label = "Username")
+            CustomTextField(value = username, onValueChange = { username = it }, label = "Username", isUsername = true)
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -118,16 +119,28 @@ fun SignUpScreen() {
 
             // Validación de coincidencia de contraseñas
             if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
-                Text(
-                    text = "Passwords do not match",
-                    fontSize = 12.sp,
-                    color = Color.Red,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 4.dp)
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = "Error",
+                        tint = Color.Red,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Passwords do not match",
+                        fontSize = 12.sp,
+                        color = Color.Red
+                    )
+                }
                 passwordMatchError = true
             } else {
                 passwordMatchError = false
             }
+
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -151,10 +164,12 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val context = LocalContext.current
+
             Button(
                 onClick = {
                     if (!passwordMatchError) {
-                        // Acción de registro
+                        Toast.makeText(context, "Todo OK, pero no hay DB", Toast.LENGTH_SHORT).show()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
@@ -170,6 +185,7 @@ fun SignUpScreen() {
                     color = Color.White
                 )
             }
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -188,13 +204,7 @@ fun SignUpScreen() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    isPassword: Boolean = false,
-    isEmail: Boolean = false
-) {
+fun CustomTextField(value: String, onValueChange: (String) -> Unit, label: String, isPassword: Boolean = false, isEmail: Boolean = false, isUsername: Boolean = true) {
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {

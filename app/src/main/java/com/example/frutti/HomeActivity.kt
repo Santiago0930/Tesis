@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -12,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,13 +35,17 @@ fun HomeScreen(username: String) {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Imagen de fondo
-        Image(
-            painter = painterResource(id = R.drawable.bg),
-            contentDescription = "Background",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop // Ajusta la imagen para que llene la pantalla sin espacios
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(id = R.drawable.bg),
+                contentDescription = "Background",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(alpha = 0.3f), // Ajusta el valor para mayor o menor transparencia
+                contentScale = ContentScale.Crop
+            )
+        }
+
 
         // Contenido de la pantalla
         Column(

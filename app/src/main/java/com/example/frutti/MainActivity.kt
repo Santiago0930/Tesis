@@ -53,7 +53,7 @@ fun WelcomeScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            contentAlignment = Alignment.BottomCenter // Alinea todo el contenido en la parte inferior
+            contentAlignment = Alignment.BottomCenter
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
