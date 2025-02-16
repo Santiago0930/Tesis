@@ -3,6 +3,8 @@ package com.example.frutti
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,7 +41,7 @@ fun FruitDetailScreen(fruitName: String) {
     var store by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
-    var rating by remember { mutableStateOf(3) }
+    var rating by remember { mutableIntStateOf(3) }
     var notes by remember { mutableStateOf("") }
 
     Column(
@@ -55,7 +58,7 @@ fun FruitDetailScreen(fruitName: String) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_fruit), // Verifica que el recurso existe
+                painter = painterResource(id = R.drawable.ic_fruit),
                 contentDescription = fruitName,
                 modifier = Modifier.size(100.dp),
                 tint = Color(0xFF1E88E5)
@@ -167,19 +170,37 @@ fun CustomTextField(label: String, value: String, isNumeric: Boolean = false, on
 
 @Composable
 fun StarRating(rating: Int, onRatingChanged: (Int) -> Unit) {
-    Row(modifier = Modifier.padding(vertical = 8.dp)) {
-        for (i in 1..5) {
-            IconButton(onClick = { onRatingChanged(i) }) {
-                Icon(
-                    imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
-                    contentDescription = "Star Rating",
-                    tint = Color(0xFFFFC107),
-                    modifier = Modifier.size(32.dp)
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(vertical = 8.dp)
+        ) {
+            for (i in 1..5) {
+                val scale by animateFloatAsState(
+                    targetValue = if (i <= rating) 1.3f else 1f,
+                    animationSpec = tween(durationMillis = 300)
                 )
+
+                IconButton(
+                    onClick = { onRatingChanged(i) },
+                    modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
+                ) {
+                    Icon(
+                        painter = painterResource(id = if (i <= rating) R.drawable.star else R.drawable.star_outline),
+                        contentDescription = "Star Rating",
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
         }
     }
 }
+
+
 
 @Preview(showBackground = true)
 @Composable
