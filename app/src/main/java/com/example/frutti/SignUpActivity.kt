@@ -53,12 +53,13 @@ fun SignUpScreen() {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var passwordMatchError by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Background Image
         Image(
-            painter = painterResource(id = R.drawable.bg), // Ensure you have this image in res/drawable
+            painter = painterResource(id = R.drawable.bg), // Asegúrate de tener esta imagen
             contentDescription = "Background Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -67,11 +68,10 @@ fun SignUpScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 33.dp, vertical = 1.dp), // Added horizontal padding
+                .padding(horizontal = 33.dp, vertical = 1.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo
             Image(
                 painter = painterResource(id = R.drawable.lococolor),
                 contentDescription = "App Logo",
@@ -80,7 +80,6 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Title
             Text(
                 text = "Sign Up",
                 fontSize = 28.sp,
@@ -89,7 +88,6 @@ fun SignUpScreen() {
                 textAlign = TextAlign.Center
             )
 
-            // Subtitle
             Text(
                 text = "Enter your credentials",
                 fontSize = 16.sp,
@@ -99,22 +97,40 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(99.dp))
 
-            // Username Field
             CustomTextField(value = username, onValueChange = { username = it }, label = "Username")
 
-            Spacer(modifier = Modifier.height(8.dp)) // Reduce the space
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Email Field with Validation
             CustomTextField(value = email, onValueChange = { email = it }, label = "Email", isEmail = true)
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Password Field with Toggle Visibility
             CustomTextField(value = password, onValueChange = { password = it }, label = "Password", isPassword = true)
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Terms & Conditions
+            CustomTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = "Re-enter Password",
+                isPassword = true
+            )
+
+            // Validación de coincidencia de contraseñas
+            if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
+                Text(
+                    text = "Passwords do not match",
+                    fontSize = 12.sp,
+                    color = Color.Red,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                passwordMatchError = true
+            } else {
+                passwordMatchError = false
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = buildAnnotatedString {
                     append("By continuing you agree to our ")
@@ -135,14 +151,18 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Sign Up Button
             Button(
-                onClick = { /* Sign Up Action */ },
+                onClick = {
+                    if (!passwordMatchError) {
+                        // Acción de registro
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
-                shape = RoundedCornerShape(17.dp), // Bordes redondeados
+                shape = RoundedCornerShape(17.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(50.dp),
+                enabled = !passwordMatchError // Deshabilita el botón si hay un error
             ) {
                 Text(
                     text = "Sign Up",
@@ -153,8 +173,7 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Already Have an Account? Login Option
-            TextButton(onClick = { /* Navigate to Login Screen */ }) {
+            TextButton(onClick = { /* Navegar a Login */ }) {
                 Text(
                     text = "Already have an account? Login",
                     fontSize = 14.sp,
@@ -164,6 +183,7 @@ fun SignUpScreen() {
         }
     }
 }
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
