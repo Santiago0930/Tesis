@@ -3,14 +3,21 @@ package com.example.frutti
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,59 +43,108 @@ fun AnalyzeFruitScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // Fondo blanco
-            .padding(16.dp),
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFF53B175), Color(0xFF2E7D32))
+                )
+            )
+            .padding(11.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.SpaceAround // Ajuste para balance
         ) {
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(11.dp)) // Más espacio arriba
 
-            // Título
+            // Título con sombreado
             Text(
                 text = "Analyze a Fruit",
-                fontSize = 20.sp,
+                fontSize = 27.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                textAlign = TextAlign.Center
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.shadow(124.dp)
             )
 
-            // Botón superior
-            CustomButton(text = "Go to Results History", onClick = {})
-
-            // Imagen en el centro
-            Image(
-                painter = painterResource(id = R.drawable.lococolor), // Cambia esto por el ID correcto de la imagen
-                contentDescription = "Analyze Icon",
-                modifier = Modifier.size(200.dp)
+            CustomButton(
+                text = "Go to Results History",
+                icon = Icons.Filled.History,
+                onClick = {}
             )
 
-            // Botón "Open Camera"
-            CustomButton(text = "Open camera", onClick = {})
+            Box(
+                modifier = Modifier
+                    .size(220.dp)
+                    .background(Color.White, shape = CircleShape)
+                    .border(4.dp, Color(0xFF53B175), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.lococolor),
+                    contentDescription = "Analyze Icon",
+                    modifier = Modifier.size(200.dp)
+                )
+            }
 
-            // Botón "Upload Image"
-            CustomButton(text = "Upload image", onClick = {})
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .shadow(6.dp, RoundedCornerShape(12.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .animateContentSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Capture or upload an image to analyze the freshness of your fruit!",
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center,
+                        color = Color.Gray
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            CustomButton(
+                text = "Open Camera",
+                icon = Icons.Filled.CameraAlt,
+                onClick = {}
+            )
+
+            CustomButton(
+                text = "Upload Image",
+                icon = Icons.Filled.Upload,
+                onClick = {}
+            )
+
+            Spacer(modifier = Modifier.height(50.dp)) // Más espacio vacío al final
         }
     }
 }
 
 @Composable
-fun CustomButton(text: String, onClick: () -> Unit) {
+fun CustomButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)), // Verde
-        shape = RoundedCornerShape(10.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
+        shape = RoundedCornerShape(17.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .height(50.dp)
+            .shadow(4.dp, shape = RoundedCornerShape(17.dp))
     ) {
-        Text(text = text, fontSize = 18.sp, color = Color.White)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(imageVector = icon, contentDescription = null, tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = text, fontSize = 18.sp, color = Color.White)
+        }
     }
 }
 
