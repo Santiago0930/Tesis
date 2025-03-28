@@ -141,7 +141,7 @@ fun CustomTextField(label: String, value: String, isNumeric: Boolean = false, on
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp)) // Fondo sutil
+            .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
             .padding(4.dp)
     ) {
         OutlinedTextField(
@@ -151,15 +151,18 @@ fun CustomTextField(label: String, value: String, isNumeric: Boolean = false, on
             keyboardOptions = KeyboardOptions(keyboardType = if (isNumeric) KeyboardType.Number else KeyboardType.Text),
             modifier = Modifier.fillMaxWidth(),
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = Color.Transparent, // Sin fondo
-                focusedBorderColor = Color.Transparent, // Sin borde al enfocar
-                unfocusedBorderColor = Color.Transparent, // Sin borde cuando no está enfocado
+            colors = TextFieldDefaults.colors( // Reemplazo de outlinedTextFieldColors
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
                 cursorColor = Color.Black
             )
         )
     }
 }
+
 
 
 

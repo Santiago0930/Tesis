@@ -41,7 +41,11 @@ android {
 
 
 dependencies {
-
+    implementation("androidx.compose.material3:material3:1.2.0")
+    implementation (libs.activity.compose.v170)
+    implementation (libs.ui)
+    implementation (libs.material3)
+    implementation(libs.coil.compose)
     implementation (libs.androidx.xnavigation.compose)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.core.ktx)

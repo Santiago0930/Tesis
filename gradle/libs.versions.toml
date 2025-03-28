@@ -1,6 +1,8 @@
 [versions]
 agp = "8.8.1"
+androidxActivityComposeVersion = "1.7.0"
 androidxXnavigationCompose = "2.5.0"
+coilCompose = "2.6.0"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -13,11 +15,15 @@ appcompat = "1.6.1"
 material = "1.10.0"
 activity = "1.10.0"
 constraintlayout = "2.1.4"
+material3 = "1.3.1"
+ui = "1.7.8"
 
 [libraries]
+activity-compose-v170 = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityComposeVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-xnavigation-compose = { module = "androidx.navigation: navigation-compose", version.ref = "androidxXnavigationCompose" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -35,6 +41,8 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

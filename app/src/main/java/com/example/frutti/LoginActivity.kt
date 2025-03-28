@@ -97,15 +97,15 @@ fun LoginScreen() {
                 singleLine = true,
                 textStyle = TextStyle(color = Color.Black),
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = Color(0xFF53B175),
-                    unfocusedBorderColor = Color.Gray
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color(0xFF53B175),
+                    unfocusedIndicatorColor = Color.Gray
                 )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Password Field
+// Password Field
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -114,11 +114,12 @@ fun LoginScreen() {
                 textStyle = TextStyle(color = Color.Black),
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = Color(0xFF53B175),
-                    unfocusedBorderColor = Color.Gray
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color(0xFF53B175),
+                    unfocusedIndicatorColor = Color.Gray
                 )
             )
+
 
             Spacer(modifier = Modifier.height(16.dp))
 

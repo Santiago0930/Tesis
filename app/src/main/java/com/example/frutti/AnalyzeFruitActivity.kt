@@ -1,7 +1,15 @@
 package com.example.frutti
 
+import android.Manifest
+import android.content.ContentValues
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.*
@@ -19,12 +27,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import coil.compose.rememberAsyncImagePainter
 import com.example.frutti.ui.theme.FruttiTheme
 
 class AnalyzeFruitActivity : ComponentActivity() {
@@ -39,36 +50,79 @@ class AnalyzeFruitActivity : ComponentActivity() {
     }
 }
 
+fun createImageUri(context: Context): Uri? {
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, "captured_high_res.jpg")
+        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Frutti")
+    }
+    return context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyzeFruitScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFF53B175), Color(0xFF2E7D32))
-                )
+    val context = LocalContext.current
+    var permissionGranted by remember { mutableStateOf(false) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var tempImageUri by remember { mutableStateOf<Uri?>(null) } // URI temporal antes de tomar la foto
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        permissionGranted = isGranted
+    }
+
+    LaunchedEffect(Unit) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+        } else {
+            permissionGranted = true
+        }
+    }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            //imageUri = tempImageUri // Solo actualizar si la foto se tomó correctamente
+        }
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        imageUri = uri
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Analyze a Fruit",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF53B175))
             )
-            .padding(11.dp),
-        contentAlignment = Alignment.TopCenter
-    ) {
+        }
+    ) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color(0xFF53B175), Color(0xFF2E7D32))
+                    )
+                )
+                .padding(paddingValues)
+                .padding(11.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceAround // Ajuste para balance
+            verticalArrangement = Arrangement.SpaceAround
         ) {
-            Spacer(modifier = Modifier.height(11.dp)) // Más espacio arriba
-
-            // Título con sombreado
-            Text(
-                text = "Analyze a Fruit",
-                fontSize = 27.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.shadow(124.dp)
-            )
-
             CustomButton(
                 text = "Go to Results History",
                 icon = Icons.Filled.History,
@@ -82,11 +136,19 @@ fun AnalyzeFruitScreen() {
                     .border(4.dp, Color(0xFF53B175), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.lococolor),
-                    contentDescription = "Analyze Icon",
-                    modifier = Modifier.size(200.dp)
-                )
+                if (imageUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(model = imageUri),
+                        contentDescription = "Captured Image",
+                        modifier = Modifier.size(200.dp)
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.lococolor),
+                        contentDescription = "Analyze Icon",
+                        modifier = Modifier.size(200.dp)
+                    )
+                }
             }
 
             Card(
@@ -98,9 +160,7 @@ fun AnalyzeFruitScreen() {
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .animateContentSize(),
+                    modifier = Modifier.padding(16.dp).animateContentSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -115,19 +175,28 @@ fun AnalyzeFruitScreen() {
             CustomButton(
                 text = "Open Camera",
                 icon = Icons.Filled.CameraAlt,
-                onClick = {}
+                onClick = {
+                    val newUri = createImageUri(context)
+                    if (permissionGranted && newUri != null) {
+                        tempImageUri = newUri // Guardar en la variable temporal
+                        takePictureLauncher.launch(newUri) // Lanza la cámara con el URI correcto
+                    } else {
+                        requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                }
             )
 
             CustomButton(
                 text = "Upload Image",
                 icon = Icons.Filled.Upload,
-                onClick = {}
+                onClick = { pickImageLauncher.launch("image/*") }
             )
 
-            Spacer(modifier = Modifier.height(50.dp)) // Más espacio vacío al final
+            Spacer(modifier = Modifier.height(50.dp))
         }
     }
 }
+
 
 @Composable
 fun CustomButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
@@ -154,6 +223,5 @@ fun CustomButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVe
 fun AnalyzeFruitPreview() {
     FruttiTheme {
         AnalyzeFruitScreen()
-
     }
 }
