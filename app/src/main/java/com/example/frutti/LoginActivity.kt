@@ -1,6 +1,9 @@
 package com.example.frutti
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -12,10 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,10 +43,12 @@ class LoginActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen() {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var email by remember { mutableStateOf(TextFieldValue("")) }
+    var password by remember { mutableStateOf(TextFieldValue("")) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -53,7 +61,7 @@ fun LoginScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 33.dp, vertical = 1.dp),
+                .padding(horizontal = 33.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -79,50 +87,78 @@ fun LoginScreen() {
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(159.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
-            CustomTextField(value = email, onValueChange = { email = it }, label = "Email", isEmail = true)
-            Spacer(modifier = Modifier.height(8.dp))
-            CustomTextField(value = password, onValueChange = { password = it }, label = "Password", isPassword = true)
-            Spacer(modifier = Modifier.height(38.dp))
-
-            TextButton(
-                onClick = { /* Forgot Password Logic */ },
+            // Email Field
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                singleLine = true,
+                textStyle = TextStyle(color = Color.Black),
                 modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color(0xFF53B175),
+                    unfocusedBorderColor = Color.Gray
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Password Field
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                textStyle = TextStyle(color = Color.Black),
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color(0xFF53B175),
+                    unfocusedBorderColor = Color.Gray
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Forgot Password
+            TextButton(
+                onClick = { showToast(context, "Coming Soon") },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Forgot\nPassword?",
-                    fontSize = 11.sp,
+                    text = "Forgot Password?",
+                    fontSize = 12.sp,
                     color = Color(0xFFA82C2C),
-                    textAlign = TextAlign.Start,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth()
+                    textAlign = TextAlign.Start
                 )
             }
 
-
-
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Log In Button
             Button(
-                onClick = { /* Log In Action */ },
+                onClick = {
+                    if (email.text.isEmpty() || password.text.isEmpty()) {
+                        showToast(context, "Please fill in all fields")
+                    } else {
+                        navigateToActivity(context, AnalyzeFruitActivity::class.java)
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
-                shape = RoundedCornerShape(17.dp), // Bordes redondeados
+                shape = RoundedCornerShape(17.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text(
-                    text = "Log In",
-                    fontSize = 18.sp,
-                    color = Color.White
-                )
+                Text(text = "Log In", fontSize = 18.sp, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = { /* Navigate to Sign Up Screen */ }) {
+            // Sign Up Button
+            TextButton(onClick = { navigateToActivity(context, SignUpActivity::class.java) }) {
                 Text(
                     text = "Don't have an account? Sign Up",
                     fontSize = 14.sp,
@@ -131,6 +167,17 @@ fun LoginScreen() {
             }
         }
     }
+}
+
+// Function to show toast messages
+fun showToast(context: Context, message: String) {
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+}
+
+// Function to navigate to another activity
+fun navigateToActivity(context: Context, destination: Class<*>) {
+    val intent = Intent(context, destination)
+    context.startActivity(intent)
 }
 
 @Preview(showBackground = true)

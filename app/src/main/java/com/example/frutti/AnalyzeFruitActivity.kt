@@ -33,6 +33,7 @@ class AnalyzeFruitActivity : ComponentActivity() {
         setContent {
             FruttiTheme {
                 AnalyzeFruitScreen()
+                MainNavigation()
             }
         }
     }
@@ -153,5 +154,6 @@ fun CustomButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVe
 fun AnalyzeFruitPreview() {
     FruttiTheme {
         AnalyzeFruitScreen()
+
     }
 }

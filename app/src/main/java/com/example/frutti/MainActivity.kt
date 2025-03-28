@@ -1,5 +1,6 @@
 package com.example.frutti
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,6 +39,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun WelcomeScreen() {
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -57,14 +61,14 @@ fun WelcomeScreen() {
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp), // Espaciado entre elementos
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 40.dp) // Ajusta el padding inferior para darle más margen
+                    .padding(bottom = 40.dp)
             ) {
                 // Icono de la aplicación
                 Image(
-                    painter = painterResource(id = R.drawable.fruit_icon), // Verifica que esta imagen exista en res/drawable
+                    painter = painterResource(id = R.drawable.fruit_icon),
                     contentDescription = "Fruit Icon",
                     modifier = Modifier.size(120.dp)
                 )
@@ -75,10 +79,9 @@ fun WelcomeScreen() {
                     fontSize = 38.sp,
                     color = Color.White,
                     textAlign = TextAlign.Center,
-                    lineHeight = 44.sp, // Ajusta la altura de línea para mejorar la legibilidad
+                    lineHeight = 44.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
-
 
                 // Subtítulo
                 Text(
@@ -89,13 +92,14 @@ fun WelcomeScreen() {
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Botón estilizado
+                // Botón que navega a LoginActivity
                 Button(
                     onClick = {
-                        // Acción al hacer clic en el botón
+                        val intent = Intent(context, LoginActivity::class.java)
+                        context.startActivity(intent)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
-                    shape = RoundedCornerShape(17.dp), // Bordes redondeados
+                    shape = RoundedCornerShape(17.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 50.dp)
@@ -111,6 +115,7 @@ fun WelcomeScreen() {
         }
     }
 }
+
 
 
 @Preview(showBackground = true)

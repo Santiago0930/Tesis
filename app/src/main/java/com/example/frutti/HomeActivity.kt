@@ -4,10 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,35 +30,51 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             HomeScreen(username = "John Doe")
+            MainNavigation()
         }
     }
 }
-
+val dailyTips = listOf(
+    "Eat seasonal fruits for maximum freshness and nutrition!",
+    "Wash fruits thoroughly before eating to remove pesticides.",
+    "Frozen fruits retain most nutrients and are great for smoothies!",
+    "The brighter the fruit color, the more antioxidants it usually contains.",
+    "Eating fruits with skins provides more fiber and nutrients.",
+    "Try to eat at least 2-3 different colored fruits each day.",
+    "Fruits make excellent natural snacks between meals.",
+    "Pair fruits with nuts for a balanced, energy-boosting snack."
+)
 @Composable
-fun HomeScreen(username: String) {
+fun HomeScreen(username: String = "Guest") {
+    val randomTip = remember { dailyTips.random() }
+    val scrollState = rememberScrollState()
+    val bottomBarHeight = 56.dp // Standard bottom navigation height
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
+        // Background Image
         Box(modifier = Modifier.fillMaxSize()) {
             Image(
                 painter = painterResource(id = R.drawable.bg),
                 contentDescription = "Background",
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer(alpha = 0.3f), // Ajusta el valor para mayor o menor transparencia
+                    .graphicsLayer(alpha = 0.3f),
                 contentScale = ContentScale.Crop
             )
         }
 
-
-        // Contenido de la pantalla
+        // Main Content
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(bottom = bottomBarHeight) // Reserve space for bottom bar
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Título de bienvenida
+            // Welcome title
             Text(
                 text = "Welcome, $username 👋",
                 fontSize = 28.sp,
@@ -64,7 +84,7 @@ fun HomeScreen(username: String) {
                 modifier = Modifier.padding(top = 32.dp, bottom = 24.dp)
             )
 
-            // Tarjeta de frutas analizadas
+            // Fruits analyzed card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -106,7 +126,7 @@ fun HomeScreen(username: String) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Estadísticas de comercios
+            // Markets section
             Text(
                 text = "Best Markets for Fruits 🛒",
                 fontSize = 24.sp,
@@ -115,7 +135,7 @@ fun HomeScreen(username: String) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Lista ficticia de comercios
+            // Markets list
             val markets = listOf(
                 "XYZ Market" to Pair("Best Quality", "\$2.50"),
                 "ABC Store" to Pair("Affordable", "\$1.80"),
@@ -163,7 +183,7 @@ fun HomeScreen(username: String) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Consejo del día
+            // Daily tip card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -186,19 +206,26 @@ fun HomeScreen(username: String) {
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = "Eat a variety of fruits daily for better health!",
+                        text = randomTip,
                         fontSize = 16.sp,
                         color = Color(0xFFF57C00)
                     )
                 }
             }
+
+
+
+            // Extra spacer to ensure content doesn't get cut off
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}
+}   
+
 
 // Vista previa
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     HomeScreen(username = "John Doe")
+    MainNavigation()
 }

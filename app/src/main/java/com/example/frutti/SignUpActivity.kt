@@ -1,5 +1,7 @@
 package com.example.frutti
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import android.os.Bundle
@@ -10,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -57,10 +60,17 @@ fun SignUpScreen() {
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordMatchError by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Check if all fields are filled
+    val allFieldsFilled = username.isNotBlank() &&
+            email.isNotBlank() &&
+            password.isNotBlank() &&
+            confirmPassword.isNotBlank()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(id = R.drawable.bg), // Asegúrate de tener esta imagen
+            painter = painterResource(id = R.drawable.bg),
             contentDescription = "Background Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -117,7 +127,6 @@ fun SignUpScreen() {
                 isPassword = true
             )
 
-            // Validación de coincidencia de contraseñas
             if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -141,43 +150,72 @@ fun SignUpScreen() {
                 passwordMatchError = false
             }
 
-
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = buildAnnotatedString {
-                    append("By continuing you agree to our ")
-                    withStyle(style = SpanStyle(color = Color(0xFF53B175), fontWeight = FontWeight.Bold)) {
-                        append("Terms of Service")
-                    }
-                    append(" and ")
-                    withStyle(style = SpanStyle(color = Color(0xFF53B175), fontWeight = FontWeight.Bold)) {
-                        append("Privacy Policy")
-                    }
-                    append(".")
-                },
-                fontSize = 12.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 3.dp)
+            val annotatedText = buildAnnotatedString {
+                append("By continuing you agree to our ")
+
+                // Terms of Service link
+                pushStringAnnotation(tag = "TERMS", annotation = "https://docs.google.com/document/d/1BSwbORkGapA3NyvCHFcvWqP2IfhmnipBpVx_mbEWfJA/edit?usp=sharing")
+                withStyle(style = SpanStyle(color = Color(0xFF53B175), fontWeight = FontWeight.Bold)) {
+                    append("Terms of Service")
+                }
+                pop()
+
+                append(" and ")
+
+                // Privacy Policy link
+                pushStringAnnotation(tag = "PRIVACY", annotation = "https://docs.google.com/document/d/1RE9ZRnGmMwDtsGQq2xhhIKfyt9YRPo_tKjeOSdDHXho/edit?usp=sharing")
+                withStyle(style = SpanStyle(color = Color(0xFF53B175), fontWeight = FontWeight.Bold)) {
+                    append("Privacy Policy")
+                }
+                pop()
+
+                append(".")
+            }
+
+            ClickableText(
+                text = annotatedText,
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = Modifier.padding(horizontal = 3.dp),
+                onClick = { offset ->
+                    annotatedText.getStringAnnotations(tag = "TERMS", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item))
+                            context.startActivity(intent)
+                        }
+
+                    annotatedText.getStringAnnotations(tag = "PRIVACY", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item))
+                            context.startActivity(intent)
+                        }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            val context = LocalContext.current
 
             Button(
                 onClick = {
                     if (!passwordMatchError) {
                         Toast.makeText(context, "Todo OK, pero no hay DB", Toast.LENGTH_SHORT).show()
+                        val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                        context.startActivity(intent)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF53B175),
+                    disabledContainerColor = Color(0xFFA0A0A0)
+                ),
                 shape = RoundedCornerShape(17.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = !passwordMatchError // Deshabilita el botón si hay un error
+                enabled = !passwordMatchError && allFieldsFilled // Disabled if fields aren't complete or passwords don't match
             ) {
                 Text(
                     text = "Sign Up",
@@ -186,10 +224,12 @@ fun SignUpScreen() {
                 )
             }
 
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = { /* Navegar a Login */ }) {
+            TextButton(onClick = {
+                val intent = Intent(context, LoginActivity::class.java)
+                context.startActivity(intent)
+            }) {
                 Text(
                     text = "Already have an account? Login",
                     fontSize = 14.sp,
@@ -200,11 +240,16 @@ fun SignUpScreen() {
     }
 }
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomTextField(value: String, onValueChange: (String) -> Unit, label: String, isPassword: Boolean = false, isEmail: Boolean = false, isUsername: Boolean = true) {
+fun CustomTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isPassword: Boolean = false,
+    isEmail: Boolean = false,
+    isUsername: Boolean = false
+) {
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -224,13 +269,8 @@ fun CustomTextField(value: String, onValueChange: (String) -> Unit, label: Strin
             BasicTextField(
                 value = value,
                 onValueChange = { newValue ->
-                    if (isEmail) {
-                        if (newValue.contains("@") && newValue.contains(".")) {
-                            onValueChange(newValue)
-                        }
-                    } else {
-                        onValueChange(newValue)
-                    }
+                    // Remove the email validation from here to allow free typing
+                    onValueChange(newValue)
                 },
                 modifier = Modifier
                     .weight(1f)
@@ -253,7 +293,6 @@ fun CustomTextField(value: String, onValueChange: (String) -> Unit, label: Strin
             }
         }
 
-        // Bottom line only
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -262,10 +301,6 @@ fun CustomTextField(value: String, onValueChange: (String) -> Unit, label: Strin
         )
     }
 }
-
-
-
-
 
 @Preview(showBackground = true)
 @Composable
