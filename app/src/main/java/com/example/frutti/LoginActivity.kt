@@ -7,8 +7,12 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,8 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -43,12 +45,11 @@ class LoginActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen() {
     val context = LocalContext.current
-    var email by remember { mutableStateOf(TextFieldValue("")) }
-    var password by remember { mutableStateOf(TextFieldValue("")) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -90,36 +91,22 @@ fun LoginScreen() {
             Spacer(modifier = Modifier.height(40.dp))
 
             // Email Field
-            OutlinedTextField(
+            CustomTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
-                singleLine = true,
-                textStyle = TextStyle(color = Color.Black),
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color(0xFF53B175),
-                    unfocusedIndicatorColor = Color.Gray
-                )
+                label = "Email",
+                isEmail = true
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-// Password Field
-            OutlinedTextField(
+            // Password Field
+            CustomTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                textStyle = TextStyle(color = Color.Black),
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color(0xFF53B175),
-                    unfocusedIndicatorColor = Color.Gray
-                )
+                label = "Password",
+                isPassword = true
             )
-
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -141,7 +128,7 @@ fun LoginScreen() {
             // Log In Button
             Button(
                 onClick = {
-                    if (email.text.isEmpty() || password.text.isEmpty()) {
+                    if (email.isEmpty() || password.isEmpty()) {
                         showToast(context, "Please fill in all fields")
                     } else {
                         navigateToActivity(context, AnalyzeFruitActivity::class.java)
