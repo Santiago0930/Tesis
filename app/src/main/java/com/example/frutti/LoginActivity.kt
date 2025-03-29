@@ -6,13 +6,12 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.addCallback
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +30,12 @@ import com.example.frutti.ui.theme.FruttiTheme
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 🚀 Prevent back navigation (disables the back button)
+        onBackPressedDispatcher.addCallback(this) {
+            // Do nothing, effectively disabling the back button
+        }
+
         setContent {
             FruttiTheme {
                 Surface(
@@ -166,7 +170,13 @@ fun showToast(context: Context, message: String) {
 fun navigateToActivity(context: Context, destination: Class<*>) {
     val intent = Intent(context, destination)
     context.startActivity(intent)
+
+    // 🚀 Finish LoginActivity so the user cannot go back to it
+    if (context is ComponentActivity) {
+        context.finish()
+    }
 }
+
 
 @Preview(showBackground = true)
 @Composable

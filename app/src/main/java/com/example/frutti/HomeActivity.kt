@@ -1,6 +1,9 @@
 package com.example.frutti
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -33,7 +36,25 @@ class HomeActivity : ComponentActivity() {
             MainNavigation()
         }
     }
+
+    private var backPressedOnce = false
+
+    override fun onBackPressed() {
+        if (backPressedOnce) {
+            super.onBackPressed() // Allows exit only on the second press
+            return
+        }
+
+        this.backPressedOnce = true
+        Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show()
+
+        // Reset after 2 seconds
+        Handler(Looper.getMainLooper()).postDelayed({
+            backPressedOnce = false
+        }, 2000)
+    }
 }
+
 val dailyTips = listOf(
     "Eat seasonal fruits for maximum freshness and nutrition!",
     "Wash fruits thoroughly before eating to remove pesticides.",

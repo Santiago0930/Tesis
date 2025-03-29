@@ -3,6 +3,7 @@ package com.example.frutti
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -198,9 +199,13 @@ fun AnalyzeFruitScreen() {
                         pickImageLauncher.launch("image/*")
                     }
                 )
+                val context = LocalContext.current
 
                 OutlinedButton(
-                    onClick = { /* Navigate to history */ },
+                    onClick = {
+                        val intent = Intent(context, ResultsHistoryActivity::class.java)
+                        context.startActivity(intent)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
@@ -209,7 +214,8 @@ fun AnalyzeFruitScreen() {
                         containerColor = Color.Transparent,
                         contentColor = Color.White
                     )
-                ) {
+                )
+                {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center

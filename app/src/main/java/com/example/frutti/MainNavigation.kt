@@ -1,5 +1,8 @@
 package com.example.frutti
 
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,12 +14,33 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.History
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    var backPressedOnce by remember { mutableStateOf(false) }
+    val handler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
+
+    val currentRoute = currentRoute(navController)
+
+    // Handle back press only on the Home screen
+    if (currentRoute == BottomNavItem.Home.route) {
+        BackHandler {
+            if (backPressedOnce) {
+                (context as? ComponentActivity)?.finish() // Exit app
+            } else {
+                backPressedOnce = true
+                Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+
+                // Reset the flag after 2 seconds
+                handler.postDelayed({ backPressedOnce = false }, 2000)
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = { BottomNavBar(navController) }
@@ -24,6 +48,7 @@ fun MainNavigation() {
         NavHostContainer(navController, Modifier.padding(innerPadding))
     }
 }
+
 
 // Define Bottom Navigation Items (✅ Fixed ImageVector reference)
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
