@@ -41,7 +41,6 @@ android {
 
 
 dependencies {
-    implementation("androidx.compose.material3:material3:1.2.0")
     implementation (libs.activity.compose.v170)
     implementation (libs.ui)
     implementation (libs.material3)
@@ -61,6 +60,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.media3.common.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

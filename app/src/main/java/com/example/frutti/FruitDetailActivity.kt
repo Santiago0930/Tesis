@@ -3,13 +3,21 @@ package com.example.frutti
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,13 +48,13 @@ fun FruitDetailScreen(fruitName: String) {
     var weight by remember { mutableStateOf("") }
     var rating by remember { mutableIntStateOf(3) }
     var notes by remember { mutableStateOf("") }
+    val storeOptions = listOf("Carulla", "Exito", "D1", "Ara", "Other")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5)) // Fondo claro
     ) {
-        // Imagen de la fruta
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -62,14 +70,12 @@ fun FruitDetailScreen(fruitName: String) {
             )
         }
 
-        // Contenido principal
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Título
             Text(
                 text = fruitName,
                 fontSize = 24.sp,
@@ -78,7 +84,6 @@ fun FruitDetailScreen(fruitName: String) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Detalles de la fruta
             Card(
                 modifier = Modifier.fillMaxWidth().shadow(8.dp, shape = RoundedCornerShape(12.dp)),
                 shape = RoundedCornerShape(12.dp),
@@ -88,13 +93,12 @@ fun FruitDetailScreen(fruitName: String) {
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    CustomTextField(label = "Store", value = store) { store = it }
+                    StoreDropdownMenu(selectedStore = store, onStoreSelected = { store = it }, options = storeOptions)
                     CustomTextField(label = "Purchase Price", value = price, isNumeric = true) { price = it }
                     CustomTextField(label = "Weight (grams)", value = weight, isNumeric = true) { weight = it }
                 }
             }
 
-            // Calificación de sabor
             Card(
                 modifier = Modifier.fillMaxWidth().shadow(8.dp, shape = RoundedCornerShape(12.dp)),
                 shape = RoundedCornerShape(12.dp),
@@ -116,7 +120,6 @@ fun FruitDetailScreen(fruitName: String) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Botón de guardar con efecto moderno
             Button(
                 onClick = { /* Acción al hacer clic */ },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
@@ -135,7 +138,116 @@ fun FruitDetailScreen(fruitName: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+@Composable
+fun StoreDropdownMenu(
+    selectedStore: String,
+    onStoreSelected: (String) -> Unit,
+    options: List<String>,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 16.dp)
+                .clickable { expanded = true },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Label and value container
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Column {
+                    // Label text with animation
+                    Box {
+                        if (selectedStore.isEmpty()) {
+                            Text(
+                                text = "Store",
+                                color = Color.Black.copy(alpha = 0.9f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        } else {
+                            Text(
+                                text = "Store",
+                                color = Color.Black.copy(alpha = 0.6f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
+                    }
+
+                    // Value text with crossfade animation
+                    if (selectedStore.isNotEmpty()) {
+                        Crossfade(
+                            targetState = selectedStore,
+                            label = "text-crossfade"
+                        ) { currentText ->
+                            Text(
+                                text = currentText,
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Dropdown arrow
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Dropdown Arrow",
+                tint = Color.Black,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+
+        // Dropdown menu
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(Color.White)
+                .width(IntrinsicSize.Max)
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            option,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    onClick = {
+                        onStoreSelected(option)
+                        expanded = false
+                    },
+                    modifier = Modifier.background(
+                        if (option == selectedStore) Color.Gray.copy(alpha = 0.1f)
+                        else Color.Transparent
+                    )
+                )
+            }
+        }
+    }
+}
+
+
+
+
 @Composable
 fun CustomTextField(label: String, value: String, isNumeric: Boolean = false, onValueChange: (String) -> Unit) {
     Box(
@@ -151,7 +263,7 @@ fun CustomTextField(label: String, value: String, isNumeric: Boolean = false, on
             keyboardOptions = KeyboardOptions(keyboardType = if (isNumeric) KeyboardType.Number else KeyboardType.Text),
             modifier = Modifier.fillMaxWidth(),
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
-            colors = TextFieldDefaults.colors( // Reemplazo de outlinedTextFieldColors
+            colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 disabledContainerColor = Color.Transparent,

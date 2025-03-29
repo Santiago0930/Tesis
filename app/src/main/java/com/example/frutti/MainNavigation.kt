@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.History
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @Composable
 fun MainNavigation() {
@@ -64,9 +66,36 @@ fun currentRoute(navController: NavHostController): String? {
 // Navigation Host - Handles Screen Switching
 @Composable
 fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modifier) {
+    val sampleFruits = remember {
+        mutableStateListOf(
+            FruitItem("Apple", "Fresh", R.drawable.ic_fruit, true),
+            FruitItem("Banana", "Overripe", R.drawable.ic_fruit, false),
+            FruitItem("Mango", "Good", R.drawable.ic_fruit, true)
+        )
+    }
+
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
-        composable(BottomNavItem.Home.route) { HomeScreen()  }
+        composable(BottomNavItem.Home.route) { HomeScreen() }
         composable(BottomNavItem.Analyze.route) { AnalyzeFruitScreen() }
-        composable(BottomNavItem.History.route) { ResultScreen() }
+        composable(BottomNavItem.History.route) {
+            ResultsHistoryScreen(
+                fruitList = sampleFruits,
+                onItemClick = { fruit ->
+                    navController.navigate("fruitDetail/${fruit.name}")
+                },
+                onClearHistory = { sampleFruits.clear() }
+            )
+        }
+
+        // Nueva ruta para la pantalla de detalles de la fruta
+        composable(
+            "fruitDetail/{fruitName}",
+            arguments = listOf(navArgument("fruitName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val fruitName = backStackEntry.arguments?.getString("fruitName") ?: "Unknown"
+            FruitDetailScreen(fruitName = fruitName)
+        }
     }
 }
+
+
