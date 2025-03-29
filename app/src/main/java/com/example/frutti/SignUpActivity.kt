@@ -1,19 +1,21 @@
 package com.example.frutti
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
@@ -22,24 +24,42 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.frutti.ui.theme.FruttiTheme
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Prevent back navigation
+        onBackPressedDispatcher.addCallback(this) {
+            // Do nothing, effectively disabling the back button
+        }
+
         setContent {
             FruttiTheme {
                 Surface(
@@ -53,6 +73,8 @@ class SignUpActivity : ComponentActivity() {
     }
 }
 
+
+
 @Composable
 fun SignUpScreen() {
     var username by remember { mutableStateOf("") }
@@ -62,11 +84,20 @@ fun SignUpScreen() {
     var passwordMatchError by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    // Create focus references
+    val (usernameFocus, emailFocus, passwordFocus, confirmPasswordFocus) = remember { FocusRequester.createRefs() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     // Check if all fields are filled
     val allFieldsFilled = username.isNotBlank() &&
             email.isNotBlank() &&
             password.isNotBlank() &&
             confirmPassword.isNotBlank()
+
+    // Auto-focus username field when screen loads
+    LaunchedEffect(Unit) {
+        usernameFocus.requestFocus()
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -106,26 +137,181 @@ fun SignUpScreen() {
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(99.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
-            CustomTextField(value = username, onValueChange = { username = it }, label = "Username", isUsername = true)
+            // Username Field
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                TextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username", color = Color.Black) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { emailFocus.requestFocus() }
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(usernameFocus),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.Black,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
+                )
+            }
+
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            CustomTextField(value = email, onValueChange = { email = it }, label = "Email", isEmail = true)
+            // Email Field
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                TextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email", color = Color.Black) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocus.requestFocus() }
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(emailFocus),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.Black,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
+                )
+            }
+
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            CustomTextField(value = password, onValueChange = { password = it }, label = "Password", isPassword = true)
+            // Password Field
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                var passwordVisible by remember { mutableStateOf(false) }
+
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password", color = Color.Black) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { confirmPasswordFocus.requestFocus() }
+                    ),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocus),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.Black,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            CustomTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = "Re-enter Password",
-                isPassword = true
-            )
+            // Confirm Password Field
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                var confirmPasswordVisible by remember { mutableStateOf(false) }
+
+                TextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirm Password", color = Color.Black) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                            if (allFieldsFilled && !passwordMatchError) {
+                                Toast.makeText(context, "Todo OK, pero no hay DB", Toast.LENGTH_SHORT).show()
+                                val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                context.startActivity(intent)
+                            }
+                        }
+                    ),
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(confirmPasswordFocus),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.Black,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
+                )
+            }
+
 
             if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
                 Row(
@@ -199,30 +385,40 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = {
-                    if (!passwordMatchError) {
-                        Toast.makeText(context, "Todo OK, pero no hay DB", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(context, AnalyzeFruitActivity::class.java)
-                        context.startActivity(intent)
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF53B175),
-                    disabledContainerColor = Color(0xFFA0A0A0)
-                ),
-                shape = RoundedCornerShape(17.dp),
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                enabled = !passwordMatchError && allFieldsFilled // Disabled if fields aren't complete or passwords don't match
+                    .height(50.dp)
+                    .clickable(enabled = !(!allFieldsFilled || passwordMatchError)) {
+                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                    }
             ) {
-                Text(
-                    text = "Sign Up",
-                    fontSize = 18.sp,
-                    color = Color.White
-                )
+                Button(
+                    onClick = {
+                        if (!passwordMatchError) {
+                            Toast.makeText(context, "Todo OK, pero no hay DB", Toast.LENGTH_SHORT).show()
+                            val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                            context.startActivity(intent)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF53B175),
+                        disabledContainerColor = Color(0xFFA0A0A0)
+                    ),
+                    shape = RoundedCornerShape(17.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    enabled = !passwordMatchError && allFieldsFilled
+                ) {
+                    Text(
+                        text = "Sign Up",
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
+                }
             }
+
+
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -236,69 +432,11 @@ fun SignUpScreen() {
                     color = Color(0xFF53B175)
                 )
             }
+            val allFieldsFilled = username.isNotBlank() &&
+                    email.isNotBlank() &&
+                    password.isNotBlank() &&
+                    confirmPassword.isNotBlank()
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CustomTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    isPassword: Boolean = false,
-    isEmail: Boolean = false,
-    isUsername: Boolean = false
-) {
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            color = Color.Gray,
-            modifier = Modifier.padding(bottom = 2.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(33.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BasicTextField(
-                value = value,
-                onValueChange = { newValue ->
-                    // Remove the email validation from here to allow free typing
-                    onValueChange(newValue)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(vertical = 8.dp),
-                textStyle = TextStyle(fontSize = 14.sp, color = Color.Black),
-                singleLine = true,
-                visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
-                decorationBox = { innerTextField ->
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        innerTextField()
-                    }
-                }
-            )
-
-            if (isPassword) {
-                val icon = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = icon, contentDescription = "Toggle Password")
-                }
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.Gray)
-        )
     }
 }
 

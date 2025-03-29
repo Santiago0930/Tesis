@@ -6,21 +6,30 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.addCallback
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,7 +40,7 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🚀 Prevent back navigation (disables the back button)
+        // Prevent back navigation
         onBackPressedDispatcher.addCallback(this) {
             // Do nothing, effectively disabling the back button
         }
@@ -54,6 +63,15 @@ fun LoginScreen() {
     val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    // Create focus references
+    val (emailFocus, passwordFocus) = remember { FocusRequester.createRefs() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Auto-focus email field when screen loads
+    LaunchedEffect(Unit) {
+        emailFocus.requestFocus()
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -95,22 +113,82 @@ fun LoginScreen() {
             Spacer(modifier = Modifier.height(40.dp))
 
             // Email Field
-            CustomTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = "Email",
-                isEmail = true
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                TextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email", color = Color.Gray) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocus.requestFocus() }
+                    ),
+                    textStyle = TextStyle(color = Color.Black), // Set text color to black
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(emailFocus),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.Black,
+                        focusedTextColor = Color.Black, // Ensure focused text is black
+                        unfocusedTextColor = Color.Black // Ensure unfocused text is black
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Password Field
-            CustomTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = "Password",
-                isPassword = true
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password", color = Color.Gray) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                            if (email.isNotEmpty() && password.isNotEmpty()) {
+                                navigateToActivity(context, AnalyzeFruitActivity::class.java)
+                            }
+                        }
+                    ),
+                    visualTransformation = PasswordVisualTransformation(),
+                    textStyle = TextStyle(color = Color.Black), // Set text color to black
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocus),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.Black,
+                        focusedTextColor = Color.Black, // Ensure focused text is black
+                        unfocusedTextColor = Color.Black // Ensure unfocused text is black
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -171,12 +249,11 @@ fun navigateToActivity(context: Context, destination: Class<*>) {
     val intent = Intent(context, destination)
     context.startActivity(intent)
 
-    // 🚀 Finish LoginActivity so the user cannot go back to it
+    // Finish LoginActivity so the user cannot go back to it
     if (context is ComponentActivity) {
         context.finish()
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
