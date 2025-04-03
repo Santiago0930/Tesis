@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,23 +39,59 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
 import com.example.frutti.ui.theme.FruttiTheme
+import kotlinx.coroutines.*
+import org.tensorflow.lite.support.image.TensorImage
 
 class AnalyzeFruitActivity : ComponentActivity() {
+    private lateinit var fruitClassifier: FruitQualityModelBinding
+    private val TAG = "AnalyzeFruitActivity"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            FruttiTheme {
-                AnalyzeFruitScreen()
-                MainNavigation()
+
+        try {
+            // Initialize the fruit classifier
+            Log.d(TAG, "Initializing FruitQualityModelBinding")
+            fruitClassifier = FruitQualityModelBinding(this)
+            Log.d(TAG, "Classifier initialized successfully")
+
+            setContent {
+                FruttiTheme {
+                    AnalyzeFruitScreen(fruitClassifier)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing model", e)
+            Toast.makeText(
+                this,
+                "Error loading model: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+
+            // Still set content even if model fails to load (graceful degradation)
+            setContent {
+                FruttiTheme {
+                    AnalyzeFruitScreen(null)
+                }
             }
         }
+    }
+
+    override fun onDestroy() {
+        try {
+            if (::fruitClassifier.isInitialized) {
+                fruitClassifier.close()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing model", e)
+        }
+        super.onDestroy()
     }
 }
 
@@ -72,11 +109,16 @@ fun createImageUri(context: Context): Uri? {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalyzeFruitScreen() {
+fun AnalyzeFruitScreen(fruitClassifier: FruitQualityModelBinding? = null) {
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+    var isAnalyzing by remember { mutableStateOf(false) }
+    var modelAvailable by remember { mutableStateOf(fruitClassifier != null) }
+    var resultText by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val screenTag = "AnalyzeFruitScreen"
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -84,6 +126,8 @@ fun AnalyzeFruitScreen() {
         permissionGranted = isGranted
         if (isGranted) {
             Toast.makeText(context, "Camera permission granted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -99,7 +143,22 @@ fun AnalyzeFruitScreen() {
     ) { success ->
         if (success && tempImageUri != null) {
             imageUri = tempImageUri
+            resultText = null
             Toast.makeText(context, "Image captured successfully!", Toast.LENGTH_SHORT).show()
+
+            // Only try to analyze if model is available
+            if (modelAvailable) {
+                imageUri?.let { uri ->
+                    analyzeImage(uri, fruitClassifier, coroutineScope, context) { result ->
+                        isAnalyzing = result.first
+                        if (result.second != null) {
+                            resultText = result.second
+                        }
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Model not available for analysis", Toast.LENGTH_SHORT).show()
+            }
         } else {
             Toast.makeText(context, "Failed to capture image", Toast.LENGTH_SHORT).show()
         }
@@ -110,7 +169,20 @@ fun AnalyzeFruitScreen() {
     ) { uri ->
         uri?.let {
             imageUri = uri
+            resultText = null
             Toast.makeText(context, "Image selected successfully!", Toast.LENGTH_SHORT).show()
+
+            // Only try to analyze if model is available
+            if (modelAvailable) {
+                analyzeImage(uri, fruitClassifier, coroutineScope, context) { result ->
+                    isAnalyzing = result.first
+                    if (result.second != null) {
+                        resultText = result.second
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Model not available for analysis", Toast.LENGTH_SHORT).show()
+            }
         } ?: run {
             Toast.makeText(context, "No image selected", Toast.LENGTH_SHORT).show()
         }
@@ -147,6 +219,25 @@ fun AnalyzeFruitScreen() {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Model status indicator
+            if (!modelAvailable) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFCCCC)
+                    )
+                ) {
+                    Text(
+                        text = "TensorFlow model could not be loaded. Classification unavailable.",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
             // Image Preview Section
             Box(
                 modifier = Modifier
@@ -157,9 +248,12 @@ fun AnalyzeFruitScreen() {
             ) {
                 if (imageUri != null) {
                     Image(
-                        painter = painterResource(id = R.drawable.lococolor),
-                        contentDescription = "Default Image",
-                        modifier = Modifier.size(200.dp)
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = "Selected Fruit Image",
+                        modifier = Modifier
+                            .size(200.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 } else {
                     Image(
@@ -168,6 +262,38 @@ fun AnalyzeFruitScreen() {
                         modifier = Modifier.size(200.dp)
                     )
                 }
+            }
+
+            // Classification result
+            if (resultText != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Result: $resultText",
+                        modifier = Modifier.padding(16.dp),
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF53B175)
+                    )
+                }
+            }
+
+            // Loading indicator when analyzing
+            if (isAnalyzing) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(48.dp)
+                )
+                Text(
+                    text = "Analyzing fruit quality...",
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
             }
 
             // Action Buttons
@@ -181,25 +307,29 @@ fun AnalyzeFruitScreen() {
                     text = "Take Photo",
                     icon = Icons.Filled.CameraAlt,
                     onClick = {
-                        val newUri = createImageUri(context)
-                        if (newUri != null) {
-                            tempImageUri = newUri  // Asegura que tempImageUri se actualiza correctamente
-                            takePictureLauncher.launch(newUri)
+                        if (permissionGranted) {
+                            val newUri = createImageUri(context)
+                            if (newUri != null) {
+                                tempImageUri = newUri
+                                takePictureLauncher.launch(newUri)
+                            } else {
+                                Toast.makeText(context, "Failed to create image URI", Toast.LENGTH_SHORT).show()
+                            }
                         } else {
-                            Toast.makeText(context, "Failed to create image URI", Toast.LENGTH_SHORT).show()
+                            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
                         }
-                    }
+                    },
+                    enabled = !isAnalyzing
                 )
-
 
                 CustomButton(
                     text = "Upload from Gallery",
                     icon = Icons.Filled.Upload,
                     onClick = {
                         pickImageLauncher.launch("image/*")
-                    }
+                    },
+                    enabled = !isAnalyzing
                 )
-                val context = LocalContext.current
 
                 OutlinedButton(
                     onClick = {
@@ -213,7 +343,8 @@ fun AnalyzeFruitScreen() {
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = Color.Transparent,
                         contentColor = Color.White
-                    )
+                    ),
+                    enabled = !isAnalyzing
                 )
                 {
                     Row(
@@ -235,23 +366,66 @@ fun AnalyzeFruitScreen() {
     }
 }
 
+private fun analyzeImage(
+    uri: Uri,
+    fruitClassifier: FruitQualityModelBinding?,
+    scope: CoroutineScope,
+    context: Context,
+    setAnalyzing: (Pair<Boolean, String?>) -> Unit
+) {
+    if (fruitClassifier == null) {
+        Toast.makeText(context, "Classifier not initialized", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    setAnalyzing(Pair(true, null))
+    val analyzeTag = "AnalyzeImage"
+
+    scope.launch {
+        val result = withContext(Dispatchers.IO) {
+            try {
+                Log.d(analyzeTag, "Loading bitmap from URI: $uri")
+                // Load bitmap from Uri
+                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                Log.d(analyzeTag, "Bitmap loaded successfully, size: ${bitmap.width}x${bitmap.height}")
+
+                // Process with model
+                fruitClassifier.classifyImage(bitmap)
+            } catch (e: Exception) {
+                Log.e(analyzeTag, "Error analyzing image", e)
+                "Error analyzing image: ${e.message}"
+            }
+        }
+
+        // Show the result in a Toast and update UI
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, "Result: $result", Toast.LENGTH_LONG).show()
+            setAnalyzing(Pair(false, result))
+        }
+    }
+}
+
 @Composable
 fun CustomButton(
     text: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
-            contentColor = Color(0xFF53B175)
+            contentColor = Color(0xFF53B175),
+            disabledContainerColor = Color.LightGray,
+            disabledContentColor = Color.Gray
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp)
-            .shadow(4.dp, shape = RoundedCornerShape(12.dp))
+            .shadow(4.dp, shape = RoundedCornerShape(12.dp)),
+        enabled = enabled
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -260,7 +434,7 @@ fun CustomButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFF53B175)
+                tint = if (enabled) Color(0xFF53B175) else Color.Gray
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
