@@ -159,8 +159,13 @@ fun EditUserInfoScreen() {
                 onClick = {
                     if (!passwordMatchError) {
                         Toast.makeText(context, "Changes saved successfully", Toast.LENGTH_SHORT).show()
+                        context.startActivity(Intent(context, HomeActivity::class.java))
+                        if (context is ComponentActivity) {
+                            context.finish() // closes EditUserInfoActivity
+                        }
                     }
-                },
+                }
+                ,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -177,7 +182,12 @@ fun EditUserInfoScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(
-                onClick = { /* Navigate back */ },
+                onClick = {
+                    context.startActivity(Intent(context, HomeActivity::class.java))
+                    if (context is ComponentActivity) {
+                        context.finish()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Cancel", color = Color(0xFFF44336))
