@@ -1,7 +1,9 @@
 package com.example.frutti
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import com.example.frutti.EditUserInfoActivity
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -13,6 +15,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -26,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 
 
 class HomeActivity : ComponentActivity() {
@@ -70,6 +77,7 @@ fun HomeScreen(username: String = "Guest") {
     val randomTip = remember { dailyTips.random() }
     val scrollState = rememberScrollState()
     val bottomBarHeight = 56.dp // Standard bottom navigation height
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -95,17 +103,54 @@ fun HomeScreen(username: String = "Guest") {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Welcome title
-            Text(
-                text = "Welcome, $username 👋",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = Color(0xFF1E88E5),
-                modifier = Modifier.padding(top = 32.dp, bottom = 24.dp)
-            )
+            // Welcome title with edit button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Welcome, $username 👋",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Start,
+                    color = Color(0xFF1E88E5),
+                    modifier = Modifier.weight(1f)
+                )
 
-            // Fruits analyzed card
+                // Edit Profile Button
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    IconButton(
+                        onClick = {
+                            val intent = Intent(context, EditUserInfoActivity::class.java)
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                color = Color(0xFF1E88E5).copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = "Edit Profile",
+                            tint = Color(0xFF1E88E5)
+                        )
+                    }
+                    Text(
+                        text = "Edit",
+                        fontSize = 12.sp,
+                        color = Color(0xFF1E88E5)
+                    )
+                }
+
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
