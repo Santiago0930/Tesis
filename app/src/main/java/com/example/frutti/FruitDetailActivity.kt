@@ -1,5 +1,7 @@
 package com.example.frutti
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -37,12 +39,26 @@ import androidx.compose.material.icons.filled.Info
 class FruitDetailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Get both fruit name and ripeness from intent
+        val fruitName = intent.getStringExtra("FRUIT_NAME") ?: "Unknown Fruit"
+        val initialRipeness = intent.getStringExtra("INITIAL_RIPENESS") ?: "Good"
+
         setContent {
-            FruitDetailScreen(fruitName = "Apple")
+            FruitDetailScreen(
+                fruitName = fruitName,
+                initialRipeness = initialRipeness
+            )
         }
     }
 }
-
+fun navigateToFruitDetail(context: Context, fruitName: String, ripeness: String) {
+    val intent = Intent(context, FruitDetailActivity::class.java).apply {
+        putExtra("FRUIT_NAME", fruitName)
+        putExtra("INITIAL_RIPENESS", ripeness)
+    }
+    context.startActivity(intent)
+}
 @Composable
 fun FruitDetailScreen(
     fruitName: String,
@@ -54,7 +70,7 @@ fun FruitDetailScreen(
     var date by remember { mutableStateOf("") }
     var ripeness by remember { mutableStateOf(initialRipeness) }
     val storeOptions = listOf("Carulla", "Exito", "D1", "Ara", "Other")
-    val ripenessOptions = listOf("Fresh", "Good", "Ripe", "Overripe")
+    val ripenessOptions = listOf("Fresh", "Good", "Overripe")
 
     Column(
         modifier = Modifier

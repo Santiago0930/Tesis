@@ -1,5 +1,7 @@
 package com.example.frutti
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -122,14 +125,20 @@ fun ResultsHistoryScreen(fruitList: List<FruitItem>, onItemClick: (FruitItem) ->
 }
 
 
-
 @Composable
 fun FruitListItem(fruit: FruitItem, onItemClick: (FruitItem) -> Unit) {
+    val context = LocalContext.current
+
     Column( // Cambiado de Row a Column para permitir más espacio
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp) // Aumentar el padding vertical para más separación
-            .clickable { onItemClick(fruit) }
+            .clickable { navigateToFruitDetail(
+                context = context,
+                fruitName = fruit.name,
+                ripeness = fruit.status
+            )
+            }
     ) {
         Spacer(modifier = Modifier.height(8.dp)) // Más espacio entre elementos
 
