@@ -75,24 +75,29 @@ class SignUpActivity : ComponentActivity() {
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen() {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+    var gender by remember { mutableStateOf("") }
     var passwordMatchError by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     // Create focus references
-    val (usernameFocus, emailFocus, passwordFocus, confirmPasswordFocus) = remember { FocusRequester.createRefs() }
+    val (usernameFocus, emailFocus, passwordFocus, confirmPasswordFocus, ageFocus) = remember { FocusRequester.createRefs() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     // Check if all fields are filled
     val allFieldsFilled = username.isNotBlank() &&
             email.isNotBlank() &&
             password.isNotBlank() &&
-            confirmPassword.isNotBlank()
+            confirmPassword.isNotBlank() &&
+            age.isNotBlank() &&
+            gender.isNotBlank()
 
     // Auto-focus username field when screen loads
     LaunchedEffect(Unit) {
@@ -173,7 +178,6 @@ fun SignUpScreen() {
                 )
             }
 
-
             Spacer(modifier = Modifier.height(8.dp))
 
             // Email Field
@@ -210,6 +214,104 @@ fun SignUpScreen() {
                 )
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Gender and Age Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Gender Field (Dropdown)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                        .padding(4.dp)
+                ) {
+                    var expanded by remember { mutableStateOf(false) }
+                    val genders = listOf("Male", "Female", "Other")
+
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TextField(
+                            value = gender,
+                            onValueChange = {},
+                            label = { Text("Gender", color = Color.Black) },
+                            singleLine = true,
+                            readOnly = true,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                cursorColor = Color.Black,
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black
+                            ),
+                            modifier = Modifier.menuAnchor()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            genders.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        gender = selectionOption
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Age Field
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                        .padding(4.dp)
+                ) {
+                    TextField(
+                        value = age,
+                        onValueChange = {
+                            if (it.isEmpty() || it.matches(Regex("^\\d+\$"))) {
+                                age = it
+                            }
+                        },
+                        label = { Text("Age", color = Color.Black) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { passwordFocus.requestFocus() }
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(ageFocus),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = Color.Black,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
+                        )
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -311,7 +413,6 @@ fun SignUpScreen() {
                     )
                 )
             }
-
 
             if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
                 Row(
@@ -417,9 +518,6 @@ fun SignUpScreen() {
                 }
             }
 
-
-
-
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(onClick = {
@@ -432,10 +530,6 @@ fun SignUpScreen() {
                     color = Color(0xFF53B175)
                 )
             }
-            val allFieldsFilled = username.isNotBlank() &&
-                    email.isNotBlank() &&
-                    password.isNotBlank() &&
-                    confirmPassword.isNotBlank()
         }
     }
 }
