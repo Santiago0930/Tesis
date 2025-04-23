@@ -34,6 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.material.icons.filled.Info
+import java.util.Calendar
+import android.app.DatePickerDialog
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.ui.platform.LocalContext
 
 
 class FruitDetailActivity : ComponentActivity() {
@@ -176,20 +180,23 @@ fun FruitDetailScreen(
                     CustomTextField(
                         label = "Purchase Price",
                         value = price,
-                        isNumeric = true
-                    ) { price = it }
+                        isNumeric = true,
+                        onValueChange = { newValue -> price = newValue }
+                    )
 
                     CustomTextField(
                         label = "Weight (grams)",
                         value = weight,
-                        isNumeric = true
-                    ) { weight = it }
+                        isNumeric = true,
+                        onValueChange = { newValue -> weight = newValue }
+                    )
 
                     CustomTextField(
                         label = "Date (DD/MM/YYYY)",
                         value = date,
-                        isNumeric = false
-                    ) { date = it }
+                        isDate = true,  // Use the date picker version
+                        onValueChange = { newValue -> date = newValue }
+                    )
 
                     // User can modify the ripeness
                     RipenessDropdownMenu(
@@ -424,19 +431,95 @@ fun StoreDropdownMenu(
 
 
 @Composable
-fun CustomTextField(label: String, value: String, isNumeric: Boolean = false, onValueChange: (String) -> Unit) {
+fun CustomTextField(
+    label: String,
+    value: String,
+    isNumeric: Boolean = false,
+    isDate: Boolean = false,  // New parameter to identify date fields
+    onValueChange: (String) -> Unit,
+    context: Context = LocalContext.current
+) {
+    if (isDate) {
+        // Special handling for date fields
+        DatePickerField(
+            label = label,
+            value = value,
+            onValueChange = onValueChange,
+            context = context
+        )
+    } else {
+        // Regular text field for other inputs
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                .padding(4.dp)
+        ) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                label = { Text(label, color = Color.Black) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (isNumeric) KeyboardType.Number else KeyboardType.Text
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                textStyle = LocalTextStyle.current.copy(color = Color.Black),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = Color.Black
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun DatePickerField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    context: Context
+) {
+    val calendar = Calendar.getInstance()
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    // Remember the date picker dialog state
+    val datePickerDialog = remember {
+        DatePickerDialog(
+            context,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                // Format the date as DD/MM/YYYY
+                val formattedDate = String.format(
+                    "%02d/%02d/%04d",
+                    selectedDay,
+                    selectedMonth + 1,  // Month is 0-based
+                    selectedYear
+                )
+                onValueChange(formattedDate)
+            },
+            year, month, day
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
             .padding(4.dp)
+            .clickable { datePickerDialog.show() }
     ) {
         OutlinedTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = {},  // No direct editing - only through date picker
             label = { Text(label, color = Color.Black) },
-            keyboardOptions = KeyboardOptions(keyboardType = if (isNumeric) KeyboardType.Number else KeyboardType.Text),
             modifier = Modifier.fillMaxWidth(),
+            enabled = false,  // Disable direct text input
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
@@ -444,8 +527,17 @@ fun CustomTextField(label: String, value: String, isNumeric: Boolean = false, on
                 disabledContainerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = Color.Black
-            )
+                disabledIndicatorColor = Color.Transparent,
+                disabledTextColor = Color.Black,
+                disabledLabelColor = if (value.isEmpty()) Color.Black.copy(alpha = 0.9f)
+                else Color.Black.copy(alpha = 0.6f)
+            ),
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.CalendarMonth,  // You'll need to add this icon
+                    contentDescription = "Select Date",
+                    tint = Color.Black.copy(alpha = 0.6f))
+            }
         )
     }
 }
