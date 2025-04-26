@@ -229,7 +229,7 @@ fun SignUpScreen() {
                         .padding(4.dp)
                 ) {
                     var expanded by remember { mutableStateOf(false) }
-                    val genders = listOf("Male", "Female", "Other")
+                    val genders = listOf("Male", "Female")
 
                     ExposedDropdownMenuBox(
                         expanded = expanded,
