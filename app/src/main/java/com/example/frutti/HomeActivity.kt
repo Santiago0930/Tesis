@@ -1,5 +1,6 @@
 package com.example.frutti
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -33,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import com.example.frutti.model.Usuario
+import com.google.gson.Gson
 
 
 class HomeActivity : ComponentActivity() {
@@ -79,6 +82,11 @@ fun HomeScreen(username: String = "Guest") {
     val bottomBarHeight = 56.dp // Standard bottom navigation height
     val context = LocalContext.current
 
+    val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    val usuarioJson = sharedPref.getString("usuario_guardado", null)
+    val usuario = Gson().fromJson(usuarioJson, Usuario::class.java)
+
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -110,7 +118,7 @@ fun HomeScreen(username: String = "Guest") {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Welcome, $username 👋",
+                    text = "Welcome, " + usuario.nombre +" 👋",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Start,

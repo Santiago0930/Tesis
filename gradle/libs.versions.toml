@@ -21,6 +21,8 @@ media3CommonKtx = "1.6.0"
 retrofit = "2.11.0"
 coroutines = "1.7.1"
 
+
+
 [libraries]
 activity-compose-v170 = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityComposeVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

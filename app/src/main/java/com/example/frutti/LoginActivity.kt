@@ -3,6 +3,7 @@ package com.example.frutti
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -34,7 +35,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.frutti.model.LoginRequest
+import com.example.frutti.model.Usuario
+import com.example.frutti.retrofit.AuthApi
+import com.example.frutti.retrofit.RetrofitService
+import com.example.frutti.retrofit.UsuarioApi
 import com.example.frutti.ui.theme.FruttiTheme
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +72,9 @@ class LoginActivity : ComponentActivity() {
 @Composable
 fun LoginScreen() {
     val context = LocalContext.current
+    var usuario by remember {
+        mutableStateOf(LoginRequest())
+    }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -120,8 +134,8 @@ fun LoginScreen() {
                     .padding(4.dp)
             ) {
                 TextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = usuario.email,
+                    onValueChange = { usuario = usuario.copy(email = it) },
                     label = { Text("Email", color = Color.Gray) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -157,8 +171,8 @@ fun LoginScreen() {
                     .padding(4.dp)
             ) {
                 TextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = usuario.password,
+                    onValueChange = { usuario = usuario.copy(password = it) },
                     label = { Text("Password", color = Color.Gray) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -168,7 +182,7 @@ fun LoginScreen() {
                     keyboardActions = KeyboardActions(
                         onDone = {
                             keyboardController?.hide()
-                            if (email.isNotEmpty() && password.isNotEmpty()) {
+                            if (usuario.email.isNotEmpty() && usuario.password.isNotEmpty()) {
                                 navigateToActivity(context, AnalyzeFruitActivity::class.java)
                             }
                         }
@@ -210,10 +224,39 @@ fun LoginScreen() {
             // Log In Button
             Button(
                 onClick = {
-                    if (email.isEmpty() || password.isEmpty()) {
+                    val retrofitService = RetrofitService()
+                    val api = retrofitService.retrofit.create(AuthApi::class.java)
+                    if (usuario.email.isEmpty() || usuario.password.isEmpty()) {
                         showToast(context, "Please fill in all fields")
                     } else {
-                        navigateToActivity(context, AnalyzeFruitActivity::class.java)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                val response = api.login(usuario).execute()
+                                if (response.isSuccessful) {
+                                    val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
+                                    val usuarioStorage = api2.obtenerUsuario(usuario.email).execute();
+                                    Log.d("LoginScreen", "Datos del usuario: ${usuarioStorage.body()}")
+                                    val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                                    with(sharedPref.edit()) {
+                                        putString("usuario_guardado", Gson().toJson(usuarioStorage.body()))  // Guarda el usuario como JSON
+                                        apply()
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Welcome!", Toast.LENGTH_LONG).show()
+                                        val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                        context.startActivity(intent)
+                                    }
+                                } else {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Error: Invalid email or password. Please try again.", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),

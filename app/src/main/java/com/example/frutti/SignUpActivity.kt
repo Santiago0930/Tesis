@@ -45,8 +45,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.frutti.ui.theme.FruttiTheme
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -57,6 +55,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.google.gson.Gson
 import kotlinx.coroutines.withContext
 
 class SignUpActivity : ComponentActivity() {
@@ -509,12 +508,19 @@ fun SignUpScreen() {
                         val api = retrofitService.retrofit.create(UsuarioApi::class.java)
 
                         if (!passwordMatchError && allFieldsFilled) {
-                            Log.d("SignUpScreen", "Datos del usuario: $usuario") // 👈 Muestra en Logcat los datos del usuario
 
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
                                     val response = api.registrarUsuario(usuario).execute()
                                     if (response.isSuccessful) {
+                                        val id = api.obtenerIdUsuario(usuario.email).execute()
+                                        usuario.id = id.body()
+                                        Log.d("SignUpScreen", "Datos del usuario: $usuario") // 👈 Muestra en Logcat los datos del usuario
+                                        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                                        with(sharedPref.edit()) {
+                                            putString("usuario_guardado", Gson().toJson(usuario))  // Guarda el usuario como JSON
+                                            apply()
+                                        }
                                         withContext(Dispatchers.Main) {
                                             Toast.makeText(context, "Usuario registrado correctamente", Toast.LENGTH_LONG).show()
                                             val intent = Intent(context, AnalyzeFruitActivity::class.java)
