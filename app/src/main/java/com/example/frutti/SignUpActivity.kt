@@ -50,6 +50,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import com.example.frutti.model.Usuario
+import com.example.frutti.retrofit.RetrofitService
+import com.example.frutti.retrofit.UsuarioApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import android.util.Log
+import kotlinx.coroutines.withContext
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,12 +86,10 @@ class SignUpActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen() {
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var usuario by remember {
+        mutableStateOf(Usuario())
+    }
     var confirmPassword by remember { mutableStateOf("") }
-    var age by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf("") }
     var passwordMatchError by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -92,12 +98,12 @@ fun SignUpScreen() {
     val keyboardController = LocalSoftwareKeyboardController.current
 
     // Check if all fields are filled
-    val allFieldsFilled = username.isNotBlank() &&
-            email.isNotBlank() &&
-            password.isNotBlank() &&
+    val allFieldsFilled = usuario.nombre.isNotBlank() &&
+            usuario.email.isNotBlank() &&
+            usuario.password.isNotBlank() &&
             confirmPassword.isNotBlank() &&
-            age.isNotBlank() &&
-            gender.isNotBlank()
+            usuario.edad > 0 &&
+            usuario.genero.isNotBlank()
 
     // Auto-focus username field when screen loads
     LaunchedEffect(Unit) {
@@ -152,8 +158,8 @@ fun SignUpScreen() {
                     .padding(4.dp)
             ) {
                 TextField(
-                    value = username,
-                    onValueChange = { username = it },
+                    value = usuario.nombre,
+                    onValueChange = { usuario = usuario.copy(nombre = it) },
                     label = { Text("Username", color = Color.Black) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -188,8 +194,8 @@ fun SignUpScreen() {
                     .padding(4.dp)
             ) {
                 TextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = usuario.email,
+                    onValueChange = { usuario = usuario.copy(email = it) },
                     label = { Text("Email", color = Color.Black) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -237,7 +243,7 @@ fun SignUpScreen() {
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         TextField(
-                            value = gender,
+                            value = usuario.genero,
                             onValueChange = {},
                             label = { Text("Gender", color = Color.Black) },
                             singleLine = true,
@@ -265,7 +271,7 @@ fun SignUpScreen() {
                                 DropdownMenuItem(
                                     text = { Text(selectionOption) },
                                     onClick = {
-                                        gender = selectionOption
+                                        usuario.genero = selectionOption
                                         expanded = false
                                     }
                                 )
@@ -282,12 +288,15 @@ fun SignUpScreen() {
                         .padding(4.dp)
                 ) {
                     TextField(
-                        value = age,
+                        value = usuario.edad.toString(),
                         onValueChange = {
-                            if (it.isEmpty() || it.matches(Regex("^\\d+\$"))) {
-                                age = it
+                            if (it.isEmpty()) {
+                                usuario = usuario.copy(edad = 0)
+                            } else if (it.matches(Regex("^\\d+$"))) {
+                                usuario= usuario.copy(edad = it.toInt())
                             }
-                        },
+                        }
+                        ,
                         label = { Text("Age", color = Color.Black) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -325,8 +334,8 @@ fun SignUpScreen() {
                 var passwordVisible by remember { mutableStateOf(false) }
 
                 TextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = usuario.password,
+                    onValueChange = { usuario = usuario.copy(password = it) },
                     label = { Text("Password", color = Color.Black) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -414,7 +423,7 @@ fun SignUpScreen() {
                 )
             }
 
-            if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
+            if (usuario.password.isNotEmpty() && confirmPassword.isNotEmpty() && usuario.password != confirmPassword) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 4.dp)
@@ -496,10 +505,34 @@ fun SignUpScreen() {
             ) {
                 Button(
                     onClick = {
-                        if (!passwordMatchError) {
-                            Toast.makeText(context, "Todo OK, pero no hay DB", Toast.LENGTH_SHORT).show()
-                            val intent = Intent(context, AnalyzeFruitActivity::class.java)
-                            context.startActivity(intent)
+                        val retrofitService = RetrofitService()
+                        val api = retrofitService.retrofit.create(UsuarioApi::class.java)
+
+                        if (!passwordMatchError && allFieldsFilled) {
+                            Log.d("SignUpScreen", "Datos del usuario: $usuario") // 👈 Muestra en Logcat los datos del usuario
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                try {
+                                    val response = api.registrarUsuario(usuario).execute()
+                                    if (response.isSuccessful) {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Usuario registrado correctamente", Toast.LENGTH_LONG).show()
+                                            val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                    } else {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        } else {
+                            Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
