@@ -478,6 +478,7 @@ fun ChangePasswordScreen(
         // Save Button
         Button(
             onClick = {
+                Log.d("usuario1", "Datos del usuario: $usuario")
                 if (passwordError) return@Button
 
                 // Ensure usuario is not null before accessing its properties
@@ -489,41 +490,42 @@ fun ChangePasswordScreen(
                 val retrofitService = RetrofitService()
                 val api = retrofitService.retrofit.create(UsuarioApi::class.java)
 
+                Log.d("SignUpScreen", "Datos del usuario antiguo: $usuario")
                 CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val usuarioUpdate = UsuarioUpdate(password = newPassword)
-                        // Ensure usuario.id is not null before making the API call
-                        if (usuario != null && usuario.id != null) {
-                            val response = api.actualizarUsuario(usuario.id, usuarioUpdate).execute()
-
-                            if (response.isSuccessful) {
-                                // Update the local usuario object and SharedPreferences
-                                usuario.password = newPassword
-                                with(sharedPref.edit()) {
-                                    putString("usuario_guardado", Gson().toJson(usuario))
-                                    apply()
-                                }
-
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Password changed", Toast.LENGTH_SHORT).show()
-                                    onBack()
-                                }
-                            } else {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Password change failed: ${response.message()}", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        } else {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "User data not available for password change", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } catch (e: Exception) {
+                try {
+                    if (currentPassword != usuario.password) {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Incorrect current password", Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        if (newPassword.isNotBlank()) {
+                            usuario.password = newPassword
                         }
                     }
+                    Log.d("SignUpScreen", "Datos del usuario nuevo: $usuario")
+
+                    val response = api.actualizarContraseña(usuario.id, newPassword).execute()
+                    if (response.isSuccessful) {
+                        with(sharedPref.edit()) {
+                            putString("usuario_guardado", Gson().toJson(usuario))  // Guarda el usuario como JSON
+                            apply()
+                        }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "Contraseña actualizado correctamente", Toast.LENGTH_LONG).show()
+                            context.startActivity(Intent(context, HomeActivity::class.java))
+                            (context as? ComponentActivity)?.finish()
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    }
                 }
+            }
             },
             modifier = Modifier
                 .fillMaxWidth()

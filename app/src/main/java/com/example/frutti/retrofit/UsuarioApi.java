@@ -29,4 +29,7 @@ public interface UsuarioApi {
     @DELETE("/usuario/eliminar/{id}")
     Call<Void> eliminarUsuario(@Path("id") Long id);
 
+    @PATCH("/usuario/actualizarContraseña/{id}")
+    Call<Usuario> actualizarContraseña(@Path("id") Long id, @Body String contraseñaNueva);
+
 }
