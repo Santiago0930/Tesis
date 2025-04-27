@@ -235,6 +235,7 @@ fun LoginScreen() {
                                 if (response.isSuccessful) {
                                     val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
                                     val usuarioStorage = api2.obtenerUsuario(usuario.email).execute();
+                                    usuarioStorage.body()!!.password = usuario.password
                                     Log.d("LoginScreen", "Datos del usuario: ${usuarioStorage.body()}")
                                     val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
                                     with(sharedPref.edit()) {
