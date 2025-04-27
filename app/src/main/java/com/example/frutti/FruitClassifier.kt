@@ -158,13 +158,13 @@ class FruitQualityModelBinding(private val context: Context) {
             val labelledResults = TensorLabel(labels, outputBuffer)
                 .mapWithFloatValue // Use mapWithFloatValue for FLOAT32, check for quantized models
 
+            // Sort all results by confidence (highest first)
             val sortedResults = labelledResults.entries.sortedByDescending { it.value }
-            val topResults = sortedResults.take(maxResults)
 
-            // 6. Format the top result
-            if (topResults.isNotEmpty()) {
-                val topCategory = topResults[0]
-                return "${topCategory.key.replace('_', ' ')} (${String.format("%.1f", topCategory.value * 100)}%)"
+            // Get only the highest confidence prediction
+            if (sortedResults.isNotEmpty()) {
+                val topPrediction = sortedResults[0]
+                return "${topPrediction.key.replace('_', ' ')} (${String.format("%.1f", topPrediction.value * 100)}%)"
             }
 
             return "No results found"
@@ -182,6 +182,46 @@ class FruitQualityModelBinding(private val context: Context) {
             Log.d(TAG, "Interpreter closed.")
         } catch (e: Exception) {
             Log.e(TAG, "Error closing interpreter", e)
+        }
+    }
+
+    // Add this method to your FruitQualityModelBinding class for debugging purposes
+    fun getAllPredictions(bitmap: Bitmap): List<Pair<String, Float>> {
+        if (interpreter == null || inputImageProcessor == null) {
+            Log.e(TAG, "Classifier not initialized properly.")
+            return emptyList()
+        }
+        if (labels.isEmpty()) {
+            Log.e(TAG, "Labels not loaded.")
+            return emptyList()
+        }
+
+        try {
+            // 1. Create TensorImage (org.tensorflow.lite.support)
+            val tensorInputImage = TensorImage(modelInputDataType)
+            tensorInputImage.load(bitmap)
+
+            // 2. Preprocess the image (org.tensorflow.lite.support)
+            val processedImageBuffer = inputImageProcessor!!.process(tensorInputImage).buffer
+
+            // 3. Create TensorBuffer for output (org.tensorflow.lite.support)
+            val outputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, outputBufferSize), modelOutputDataType)
+
+            // 4. Run inference
+            interpreter!!.run(processedImageBuffer, outputBuffer.buffer.rewind())
+
+            // 5. Postprocess (org.tensorflow.lite.support)
+            val labelledResults = TensorLabel(labels, outputBuffer)
+                .mapWithFloatValue
+
+            // Sort all results by confidence (highest first) and return as list of pairs
+            return labelledResults.entries
+                .sortedByDescending { it.value }
+                .map { Pair(it.key.replace('_', ' '), it.value) }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error classifying image", e)
+            return emptyList()
         }
     }
 }

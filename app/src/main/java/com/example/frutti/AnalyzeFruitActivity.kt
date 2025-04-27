@@ -366,6 +366,7 @@ fun AnalyzeFruitScreen(fruitClassifier: FruitQualityModelBinding? = null) {
     }
 }
 
+// Then modify your analyzeImage function to log all predictions
 private fun analyzeImage(
     uri: Uri,
     fruitClassifier: FruitQualityModelBinding?,
@@ -389,7 +390,14 @@ private fun analyzeImage(
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 Log.d(analyzeTag, "Bitmap loaded successfully, size: ${bitmap.width}x${bitmap.height}")
 
-                // Process with model
+                // FOR DEBUGGING ONLY: Get and log all predictions
+                val allPredictions = fruitClassifier.getAllPredictions(bitmap)
+                Log.d(analyzeTag, "All predictions:")
+                allPredictions.forEachIndexed { index, prediction ->
+                    Log.d(analyzeTag, "${index + 1}. ${prediction.first}: ${String.format("%.1f", prediction.second * 100)}%")
+                }
+
+                // Process with model - only returns the top prediction for UI
                 fruitClassifier.classifyImage(bitmap)
             } catch (e: Exception) {
                 Log.e(analyzeTag, "Error analyzing image", e)
@@ -404,7 +412,6 @@ private fun analyzeImage(
         }
     }
 }
-
 @Composable
 fun CustomButton(
     text: String,
