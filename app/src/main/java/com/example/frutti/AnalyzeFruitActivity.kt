@@ -3,7 +3,6 @@ package com.example.frutti
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -43,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.frutti.ui.theme.FruttiTheme
 import kotlinx.coroutines.*
@@ -56,14 +56,13 @@ class AnalyzeFruitActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         try {
-            // Initialize the fruit classifier
             Log.d(TAG, "Initializing FruitQualityModelBinding")
             fruitClassifier = FruitQualityModelBinding(this)
             Log.d(TAG, "Classifier initialized successfully")
 
             setContent {
                 FruttiTheme {
-                    AnalyzeFruitScreen(fruitClassifier)
+                    MainNavigation(fruitClassifier)
                 }
             }
         } catch (e: Exception) {
@@ -74,10 +73,9 @@ class AnalyzeFruitActivity : ComponentActivity() {
                 Toast.LENGTH_LONG
             ).show()
 
-            // Still set content even if model fails to load (graceful degradation)
             setContent {
                 FruttiTheme {
-                    AnalyzeFruitScreen(null)
+                    MainNavigation(null)
                 }
             }
         }
@@ -95,21 +93,12 @@ class AnalyzeFruitActivity : ComponentActivity() {
     }
 }
 
-fun createImageUri(context: Context): Uri? {
-    val contentValues = ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, "frutti_${System.currentTimeMillis()}.jpg")
-        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Frutti")
-    }
-    return context.contentResolver.insert(
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        contentValues
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalyzeFruitScreen(fruitClassifier: FruitQualityModelBinding? = null) {
+fun AnalyzeFruitScreen(
+    fruitClassifier: FruitQualityModelBinding? = null,
+    navController: NavHostController? = null
+) {
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -146,7 +135,6 @@ fun AnalyzeFruitScreen(fruitClassifier: FruitQualityModelBinding? = null) {
             resultText = null
             Toast.makeText(context, "Image captured successfully!", Toast.LENGTH_SHORT).show()
 
-            // Only try to analyze if model is available
             if (modelAvailable) {
                 imageUri?.let { uri ->
                     analyzeImage(uri, fruitClassifier, coroutineScope, context) { result ->
@@ -172,7 +160,6 @@ fun AnalyzeFruitScreen(fruitClassifier: FruitQualityModelBinding? = null) {
             resultText = null
             Toast.makeText(context, "Image selected successfully!", Toast.LENGTH_SHORT).show()
 
-            // Only try to analyze if model is available
             if (modelAvailable) {
                 analyzeImage(uri, fruitClassifier, coroutineScope, context) { result ->
                     isAnalyzing = result.first
@@ -217,156 +204,160 @@ fun AnalyzeFruitScreen(fruitClassifier: FruitQualityModelBinding? = null) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            // Model status indicator
-            if (!modelAvailable) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFCCCC)
-                    )
-                ) {
-                    Text(
-                        text = "TensorFlow model could not be loaded. Classification unavailable.",
-                        color = Color.Red,
-                        modifier = Modifier.padding(16.dp),
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            // Image Preview Section
-            Box(
-                modifier = Modifier
-                    .size(240.dp)
-                    .background(Color.White, shape = CircleShape)
-                    .border(4.dp, Color(0xFF53B175), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                if (imageUri != null) {
-                    Image(
-                        painter = rememberAsyncImagePainter(imageUri),
-                        contentDescription = "Selected Fruit Image",
-                        modifier = Modifier
-                            .size(200.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.lococolor),
-                        contentDescription = "Default Image",
-                        modifier = Modifier.size(200.dp)
-                    )
-                }
-            }
-
-            // Classification result
-            if (resultText != null) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = "Result: $resultText",
-                        modifier = Modifier.padding(16.dp),
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF53B175)
-                    )
-                }
-            }
-
-            // Loading indicator when analyzing
-            if (isAnalyzing) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    modifier = Modifier.size(48.dp)
-                )
-                Text(
-                    text = "Analyzing fruit quality...",
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            // Action Buttons
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                CustomButton(
-                    text = "Take Photo",
-                    icon = Icons.Filled.CameraAlt,
-                    onClick = {
-                        if (permissionGranted) {
-                            val newUri = createImageUri(context)
-                            if (newUri != null) {
-                                tempImageUri = newUri
-                                takePictureLauncher.launch(newUri)
-                            } else {
-                                Toast.makeText(context, "Failed to create image URI", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    if (!modelAvailable) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFFCCCC)
+                            )
+                        ) {
+                            Text(
+                                text = "TensorFlow model could not be loaded. Classification unavailable.",
+                                color = Color.Red,
+                                modifier = Modifier.padding(16.dp),
+                                fontWeight = FontWeight.Medium
+                            )
                         }
-                    },
-                    enabled = !isAnalyzing
-                )
-
-                CustomButton(
-                    text = "Upload from Gallery",
-                    icon = Icons.Filled.Upload,
-                    onClick = {
-                        pickImageLauncher.launch("image/*")
-                    },
-                    enabled = !isAnalyzing
-                )
-
-                OutlinedButton(
-                    onClick = {
-                        val intent = Intent(context, ResultsHistoryActivity::class.java)
-                        context.startActivity(intent)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    border = BorderStroke(2.dp, Color.White),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = Color.White
-                    ),
-                    enabled = !isAnalyzing
-                )
-                {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.History,
-                            contentDescription = "History"
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("View History")
                     }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+                    Box(
+                        modifier = Modifier
+                            .size(240.dp)
+                            .background(Color.White, shape = CircleShape)
+                            .border(4.dp, Color(0xFF53B175), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (imageUri != null) {
+                            Image(
+                                painter = rememberAsyncImagePainter(imageUri),
+                                contentDescription = "Selected Fruit Image",
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.lococolor),
+                                contentDescription = "Default Image",
+                                modifier = Modifier.size(200.dp)
+                            )
+                        }
+                    }
+
+                    if (resultText != null) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = "Result: $resultText",
+                                modifier = Modifier.padding(16.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF53B175)
+                            )
+                        }
+                    }
+
+                    if (isAnalyzing) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "Analyzing fruit quality...",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CustomButton(
+                            text = "Take Photo",
+                            icon = Icons.Filled.CameraAlt,
+                            onClick = {
+                                if (permissionGranted) {
+                                    val newUri = createImageUri(context)
+                                    if (newUri != null) {
+                                        tempImageUri = newUri
+                                        takePictureLauncher.launch(newUri)
+                                    } else {
+                                        Toast.makeText(context, "Failed to create image URI", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                }
+                            },
+                            enabled = !isAnalyzing
+                        )
+
+                        CustomButton(
+                            text = "Upload from Gallery",
+                            icon = Icons.Filled.Upload,
+                            onClick = {
+                                pickImageLauncher.launch("image/*")
+                            },
+                            enabled = !isAnalyzing
+                        )
+
+                        OutlinedButton(
+                            onClick = {
+                                navController?.navigate(BottomNavItem.History.route)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            border = BorderStroke(2.dp, Color.White),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = Color.White
+                            ),
+                            enabled = !isAnalyzing
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.History,
+                                    contentDescription = "History"
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("View History")
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
     }
 }
 
-// Then modify your analyzeImage function to log all predictions
+fun createImageUri(context: Context): Uri? {
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, "frutti_${System.currentTimeMillis()}.jpg")
+        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Frutti")
+    }
+    return context.contentResolver.insert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        contentValues
+    )
+}
+
 private fun analyzeImage(
     uri: Uri,
     fruitClassifier: FruitQualityModelBinding?,
@@ -386,18 +377,15 @@ private fun analyzeImage(
         val result = withContext(Dispatchers.IO) {
             try {
                 Log.d(analyzeTag, "Loading bitmap from URI: $uri")
-                // Load bitmap from Uri
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 Log.d(analyzeTag, "Bitmap loaded successfully, size: ${bitmap.width}x${bitmap.height}")
 
-                // FOR DEBUGGING ONLY: Get and log all predictions
                 val allPredictions = fruitClassifier.getAllPredictions(bitmap)
                 Log.d(analyzeTag, "All predictions:")
                 allPredictions.forEachIndexed { index, prediction ->
                     Log.d(analyzeTag, "${index + 1}. ${prediction.first}: ${String.format("%.1f", prediction.second * 100)}%")
                 }
 
-                // Process with model - only returns the top prediction for UI
                 fruitClassifier.classifyImage(bitmap)
             } catch (e: Exception) {
                 Log.e(analyzeTag, "Error analyzing image", e)
@@ -405,13 +393,13 @@ private fun analyzeImage(
             }
         }
 
-        // Show the result in a Toast and update UI
         withContext(Dispatchers.Main) {
             Toast.makeText(context, "Result: $result", Toast.LENGTH_LONG).show()
             setAnalyzing(Pair(false, result))
         }
     }
 }
+
 @Composable
 fun CustomButton(
     text: String,

@@ -17,40 +17,13 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 
-@Composable
-fun MainNavigation() {
-    val navController = rememberNavController()
-    val context = LocalContext.current
-    var backPressedOnce by remember { mutableStateOf(false) }
-    val handler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
-
-    val currentRoute = currentRoute(navController)
-
-    // Handle back press only on the Home screen
-    if (currentRoute == BottomNavItem.Home.route) {
-        BackHandler {
-            if (backPressedOnce) {
-                (context as? ComponentActivity)?.finish() // Exit app
-            } else {
-                backPressedOnce = true
-                Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
-
-                // Reset the flag after 2 seconds
-                handler.postDelayed({ backPressedOnce = false }, 2000)
-            }
-        }
-    }
-
-    Scaffold(
-        bottomBar = { BottomNavBar(navController) }
-    ) { innerPadding ->
-        NavHostContainer(navController, Modifier.padding(innerPadding))
-    }
-}
-
-
-// Define Bottom Navigation Items (✅ Fixed ImageVector reference)
+// Define Bottom Navigation Items
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
     object Home : BottomNavItem("home", Icons.Filled.Home, "Home")
     object Analyze : BottomNavItem("analyze", Icons.Filled.Analytics, "Analyze")
@@ -88,9 +61,41 @@ fun currentRoute(navController: NavHostController): String? {
     return navBackStackEntry?.destination?.route
 }
 
-// Navigation Host - Handles Screen Switching
 @Composable
-fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modifier) {
+fun MainNavigation(fruitClassifier: FruitQualityModelBinding? = null) {
+    val navController = rememberNavController()
+    val context = LocalContext.current
+    var backPressedOnce by remember { mutableStateOf(false) }
+    val handler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
+
+    val currentRoute = currentRoute(navController)
+
+    // Handle back press only on the Home screen
+    if (currentRoute == BottomNavItem.Home.route) {
+        BackHandler {
+            if (backPressedOnce) {
+                (context as? ComponentActivity)?.finish()
+            } else {
+                backPressedOnce = true
+                Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+                handler.postDelayed({ backPressedOnce = false }, 2000)
+            }
+        }
+    }
+
+    Scaffold(
+        bottomBar = { BottomNavBar(navController) }
+    ) { innerPadding ->
+        NavHostContainer(navController, Modifier.padding(innerPadding), fruitClassifier)
+    }
+}
+
+@Composable
+fun NavHostContainer(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    fruitClassifier: FruitQualityModelBinding? = null
+) {
     val sampleFruits = remember {
         mutableStateListOf(
             FruitItem("Apple", "Fresh", R.drawable.ic_fruit, true),
@@ -101,7 +106,12 @@ fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modi
 
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) { HomeScreen() }
-        composable(BottomNavItem.Analyze.route) { AnalyzeFruitScreen() }
+        composable(BottomNavItem.Analyze.route) {
+            AnalyzeFruitScreen(
+                fruitClassifier = fruitClassifier,
+                navController = navController
+            )
+        }
         composable(BottomNavItem.History.route) {
             ResultsHistoryScreen(
                 fruitList = sampleFruits,
@@ -112,7 +122,6 @@ fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modi
             )
         }
 
-        // Nueva ruta para la pantalla de detalles de la fruta
         composable(
             "fruitDetail/{fruitName}",
             arguments = listOf(navArgument("fruitName") { type = NavType.StringType })
@@ -122,5 +131,3 @@ fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modi
         }
     }
 }
-
-
