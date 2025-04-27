@@ -74,8 +74,21 @@ val dailyTips = listOf(
     "Eating fruits with skins provides more fiber and nutrients.",
     "Try to eat at least 2-3 different colored fruits each day.",
     "Fruits make excellent natural snacks between meals.",
-    "Pair fruits with nuts for a balanced, energy-boosting snack."
+    "Pair fruits with nuts for a balanced, energy-boosting snack.",
+    "Stay hydrated by eating water-rich fruits like watermelon and cucumber.",
+    "Citrus fruits like oranges and lemons boost your immune system.",
+    "Bananas are a great source of potassium and help maintain heart health.",
+    "Apples contain pectin, a fiber that promotes gut health.",
+    "Berries are loaded with antioxidants that support brain function.",
+    "Avocados are technically fruits and are packed with healthy fats.",
+    "Pineapple contains bromelain, an enzyme that aids digestion.",
+    "Grapes can support heart health thanks to their polyphenols.",
+    "Mangoes are rich in vitamin A, which is vital for eye health.",
+    "Cherries may help reduce inflammation and muscle soreness.",
+    "Kiwi offers more vitamin C per serving than oranges!",
+    "Papaya contains enzymes that help with protein digestion."
 )
+
 @Composable
 fun HomeScreen(username: String = "Guest") {
     val randomTip = remember { dailyTips.random() }

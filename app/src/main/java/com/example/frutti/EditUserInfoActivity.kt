@@ -394,26 +394,16 @@ fun ChangePasswordScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 33.dp, vertical = 24.dp)
+            .padding(horizontal = 33.dp, vertical = 44.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Back Button for Change Password Screen
         Box(modifier = Modifier.fillMaxWidth()) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.TopStart)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
-                )
-            }
             Image(
                 painter = painterResource(id = R.drawable.lococolor),
                 contentDescription = "App Logo",
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(120.dp)
                     .align(Alignment.TopCenter)
             )
         }
