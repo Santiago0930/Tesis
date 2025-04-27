@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -74,14 +75,26 @@ fun EditUserInfoScreen() {
         activity?.finish() // Finish the current activity
     }
 
-
-    if (showPasswordScreen) {
-        ChangePasswordScreen(onBack = { showPasswordScreen = false })
-    } else {
-        EditProfileScreen(
-            onPasswordChangeClick = { showPasswordScreen = true },
-            onBackClick = navigateBackToHome as () -> Unit // Pass the navigation action
+    // Background Image
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.bg),
+            contentDescription = "Background",
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(alpha = 0.7f),
+            contentScale = ContentScale.Crop
         )
+
+        // Content laid out on top of the background
+        if (showPasswordScreen) {
+            ChangePasswordScreen(onBack = { showPasswordScreen = false })
+        } else {
+            EditProfileScreen(
+                onPasswordChangeClick = { showPasswordScreen = true },
+                onBackClick = navigateBackToHome as () -> Unit // Pass the navigation action
+            )
+        }
     }
 }
 
