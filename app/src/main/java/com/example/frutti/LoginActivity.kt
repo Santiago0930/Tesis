@@ -89,8 +89,8 @@ fun LoginScreen() {
 
     // Test user credentials
     val testUser = LoginRequest(
-        email = "Dayro@gol.com",
-        password = "ONC"
+        //email = "Dayro@gol.com",
+        //password = "ONC"
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
