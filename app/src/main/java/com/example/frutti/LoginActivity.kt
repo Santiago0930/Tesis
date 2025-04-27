@@ -87,6 +87,12 @@ fun LoginScreen() {
         emailFocus.requestFocus()
     }
 
+    // Test user credentials
+    val testUser = LoginRequest(
+        email = "Dayro@gol.com",
+        password = "ONC"
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.bg),
@@ -182,13 +188,66 @@ fun LoginScreen() {
                     keyboardActions = KeyboardActions(
                         onDone = {
                             keyboardController?.hide()
-                            if (usuario.email.isNotEmpty() && usuario.password.isNotEmpty()) {
-                                navigateToActivity(context, AnalyzeFruitActivity::class.java)
+                            // Handle login when Enter is pressed
+                            if (usuario.email == testUser.email && usuario.password == testUser.password) {
+                                // Test user login
+                                val testUserObj = Usuario(
+                                    nombre = "Test User",
+                                    email = testUser.email,
+                                    password = testUser.password,
+                                    edad = 30,
+                                    genero = "Male"
+                                )
+
+                                val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                                with(sharedPref.edit()) {
+                                    putString("usuario_guardado", Gson().toJson(testUserObj))
+                                    apply()
+                                }
+
+                                Toast.makeText(context, "Welcome Test User!", Toast.LENGTH_LONG).show()
+                                val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                context.startActivity(intent)
+                            } else if (usuario.email.isNotEmpty() && usuario.password.isNotEmpty()) {
+                                // Regular login attempt
+                                val retrofitService = RetrofitService()
+                                val api = retrofitService.retrofit.create(AuthApi::class.java)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        val response = api.login(usuario).execute()
+                                        if (response.isSuccessful) {
+                                            val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
+                                            val usuarioStorage = api2.obtenerUsuario(usuario.email).execute()
+                                            usuarioStorage.body()!!.password = usuario.password
+                                            Log.d("LoginScreen", "Datos del usuario: ${usuarioStorage.body()}")
+                                            val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                                            with(sharedPref.edit()) {
+                                                putString("usuario_guardado", Gson().toJson(usuarioStorage.body()))
+                                                apply()
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Welcome!", Toast.LENGTH_LONG).show()
+                                                val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                                context.startActivity(intent)
+                                            }
+                                        } else {
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Error: Invalid email or password", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(context, "Please enter both email and password", Toast.LENGTH_SHORT).show()
                             }
                         }
                     ),
                     visualTransformation = PasswordVisualTransformation(),
-                    textStyle = TextStyle(color = Color.Black), // Set text color to black
+                    textStyle = TextStyle(color = Color.Black),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(passwordFocus),
@@ -198,8 +257,8 @@ fun LoginScreen() {
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         cursorColor = Color.Black,
-                        focusedTextColor = Color.Black, // Ensure focused text is black
-                        unfocusedTextColor = Color.Black // Ensure unfocused text is black
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
                     )
                 )
             }
@@ -224,37 +283,62 @@ fun LoginScreen() {
             // Log In Button
             Button(
                 onClick = {
-                    val retrofitService = RetrofitService()
-                    val api = retrofitService.retrofit.create(AuthApi::class.java)
-                    if (usuario.email.isEmpty() || usuario.password.isEmpty()) {
-                        showToast(context, "Please fill in all fields")
+                    if (usuario.email == testUser.email && usuario.password == testUser.password) {
+                        // Create a test user object
+                        val testUserObj = Usuario(
+                            nombre = "Test User",
+                            email = testUser.email,
+                            password = testUser.password,
+                            // Add other required fields with dummy data
+                            edad = 30,
+                            genero = "Male"
+                        )
+
+                        // Save test user to shared preferences
+                        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                        with(sharedPref.edit()) {
+                            putString("usuario_guardado", Gson().toJson(testUserObj))
+                            apply()
+                        }
+
+                        // Navigate to main activity
+                        Toast.makeText(context, "Welcome Test User!", Toast.LENGTH_LONG).show()
+                        val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                        context.startActivity(intent)
                     } else {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                val response = api.login(usuario).execute()
-                                if (response.isSuccessful) {
-                                    val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
-                                    val usuarioStorage = api2.obtenerUsuario(usuario.email).execute();
-                                    usuarioStorage.body()!!.password = usuario.password
-                                    Log.d("LoginScreen", "Datos del usuario: ${usuarioStorage.body()}")
-                                    val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                                    with(sharedPref.edit()) {
-                                        putString("usuario_guardado", Gson().toJson(usuarioStorage.body()))  // Guarda el usuario como JSON
-                                        apply()
+                        // Original login logic
+                        val retrofitService = RetrofitService()
+                        val api = retrofitService.retrofit.create(AuthApi::class.java)
+                        if (usuario.email.isEmpty() || usuario.password.isEmpty()) {
+                            showToast(context, "Please fill in all fields")
+                        } else {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                try {
+                                    val response = api.login(usuario).execute()
+                                    if (response.isSuccessful) {
+                                        val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
+                                        val usuarioStorage = api2.obtenerUsuario(usuario.email).execute();
+                                        usuarioStorage.body()!!.password = usuario.password
+                                        Log.d("LoginScreen", "Datos del usuario: ${usuarioStorage.body()}")
+                                        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                                        with(sharedPref.edit()) {
+                                            putString("usuario_guardado", Gson().toJson(usuarioStorage.body()))
+                                            apply()
+                                        }
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Welcome!", Toast.LENGTH_LONG).show()
+                                            val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                    } else {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Error: Invalid email or password. Please try again.", Toast.LENGTH_LONG).show()
+                                        }
                                     }
+                                } catch (e: Exception) {
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Welcome!", Toast.LENGTH_LONG).show()
-                                        val intent = Intent(context, AnalyzeFruitActivity::class.java)
-                                        context.startActivity(intent)
+                                        Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                     }
-                                } else {
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Error: Invalid email or password. Please try again.", Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }

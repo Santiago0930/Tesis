@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.Composable
@@ -111,17 +112,49 @@ fun HomeScreen(username: String = "Guest") {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Welcome title with edit button
+            // Welcome title with buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Log Out Button
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    IconButton(
+                        onClick = {
+                            // Clear user session and navigate to login
+                            sharedPref.edit().clear().apply()
+                            val intent = Intent(context, LoginActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                color = Color(0xFFE53935).copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ExitToApp,
+                            contentDescription = "Log Out",
+                            tint = Color(0xFFE53935)
+                        )
+                    }
+                    Text(
+                        text = "Log Out",
+                        fontSize = 12.sp,
+                        color = Color(0xFFE53935)
+                    )
+                }
+
                 Text(
                     text = "Welcome, " + usuario.nombre +" 👋",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Start,
+                    textAlign = TextAlign.Center,
                     color = Color(0xFF1E88E5),
                     modifier = Modifier.weight(1f)
                 )
@@ -154,11 +187,10 @@ fun HomeScreen(username: String = "Guest") {
                         color = Color(0xFF1E88E5)
                     )
                 }
-
             }
             Spacer(modifier = Modifier.height(24.dp))
 
-            
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -287,14 +319,11 @@ fun HomeScreen(username: String = "Guest") {
                 }
             }
 
-
-
             // Extra spacer to ensure content doesn't get cut off
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}   
-
+}
 
 // Vista previa
 @Preview(showBackground = true)
