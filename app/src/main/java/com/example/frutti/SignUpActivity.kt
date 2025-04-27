@@ -287,15 +287,17 @@ fun SignUpScreen() {
                         .padding(4.dp)
                 ) {
                     TextField(
-                        value = usuario.edad.toString(),
+                        value = if (usuario.edad == 0) "" else usuario.edad.toString(),
                         onValueChange = {
                             if (it.isEmpty()) {
-                                usuario = usuario.copy(edad = 0)
+                                usuario = usuario.copy(edad = 0)  // Store 0 but show empty string
                             } else if (it.matches(Regex("^\\d+$"))) {
-                                usuario= usuario.copy(edad = it.toInt())
+                                val ageValue = it.toInt()
+                                if (ageValue > 0) {  // Optional: Add validation for minimum age
+                                    usuario = usuario.copy(edad = ageValue)
+                                }
                             }
-                        }
-                        ,
+                        },
                         label = { Text("Age", color = Color.Black) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
