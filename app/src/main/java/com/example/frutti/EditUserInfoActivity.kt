@@ -14,8 +14,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,19 +63,32 @@ class EditUserInfoActivity : ComponentActivity() {
 @Composable
 fun EditUserInfoScreen() {
     var showPasswordScreen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val activity = context as? ComponentActivity
+
+    // Define the navigation action for back/cancel
+    val navigateBackToHome = {
+        val intent = Intent(context, HomeActivity::class.java) // Navigate to HomeActivity
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Clear back stack
+        context.startActivity(intent)
+        activity?.finish() // Finish the current activity
+    }
+
 
     if (showPasswordScreen) {
         ChangePasswordScreen(onBack = { showPasswordScreen = false })
     } else {
         EditProfileScreen(
-            onPasswordChangeClick = { showPasswordScreen = true }
+            onPasswordChangeClick = { showPasswordScreen = true },
+            onBackClick = navigateBackToHome as () -> Unit // Pass the navigation action
         )
     }
 }
 
 @Composable
 fun EditProfileScreen(
-    onPasswordChangeClick: () -> Unit
+    onPasswordChangeClick: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
     val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -91,15 +104,23 @@ fun EditProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 33.dp, vertical = 24.dp)
+            .padding(horizontal = 33.dp, vertical = 44.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.lococolor),
-            contentDescription = "App Logo",
-            modifier = Modifier.size(100.dp)
-        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Add space above the image
+            Spacer(modifier = Modifier.height(32.dp)) // Adjust this value as needed
+
+            Image(
+                painter = painterResource(id = R.drawable.lococolor),
+                contentDescription = "App Logo",
+                modifier = Modifier
+                    .size(120.dp)
+                    .align(Alignment.TopCenter)
+            )
+        }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -154,26 +175,35 @@ fun EditProfileScreen(
                         val usuarioUpdate = UsuarioUpdate(
                             nombre = username,
                             email = email,
-                            edad = age.toIntOrNull() ?: usuario.edad
+                            // Only update age if the new value is a valid integer
+                            edad = age.toIntOrNull() ?: usuario?.edad ?: 0 // Provide a default if usuario or edad is null
                         )
 
-                        val response = api.actualizarUsuario(usuario.id, usuarioUpdate).execute()
-                        if (response.isSuccessful) {
-                            usuario.nombre = username
-                            usuario.email = email
-                            usuario.edad = age.toIntOrNull() ?: usuario.edad
+                        // Ensure usuario and usuario.id are not null before making the API call
+                        if (usuario != null && usuario.id != null) {
+                            val response = api.actualizarUsuario(usuario.id, usuarioUpdate).execute()
+                            if (response.isSuccessful) {
+                                // Update the local usuario object and SharedPreferences
+                                usuario.nombre = username
+                                usuario.email = email
+                                usuario.edad = age.toIntOrNull() ?: usuario.edad
 
-                            with(sharedPref.edit()) {
-                                putString("usuario_guardado", Gson().toJson(usuario))
-                                apply()
-                            }
+                                with(sharedPref.edit()) {
+                                    putString("usuario_guardado", Gson().toJson(usuario))
+                                    apply()
+                                }
 
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Update failed: ${response.message()}", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         } else {
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Update failed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "User data not available", Toast.LENGTH_SHORT).show()
                             }
                         }
                     } catch (e: Exception) {
@@ -192,6 +222,11 @@ fun EditProfileScreen(
                 contentColor = Color.White
             )
         ) {
+            Icon(
+                imageVector = Icons.Filled.Save,
+                contentDescription = "Save Changes Icon",
+                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            )
             Text("Save Changes", fontSize = 18.sp)
         }
 
@@ -209,6 +244,11 @@ fun EditProfileScreen(
                 contentColor = Color.White
             )
         ) {
+            Icon(
+                imageVector = Icons.Filled.Lock,
+                contentDescription = "Change Password Icon",
+                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            )
             Text("Change Password", fontSize = 18.sp)
         }
 
@@ -226,8 +266,33 @@ fun EditProfileScreen(
                 contentColor = Color.White
             )
         ) {
+            Icon(
+                imageVector = Icons.Filled.Delete,
+                contentDescription = "Delete Account Icon",
+                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            )
             Text("Delete Account", fontSize = 18.sp)
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Cancel Button (Text Only, Red)
+        TextButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Cancel,
+                contentDescription = "Cancel Icon",
+                tint = Color.Red, // Set icon tint to red
+                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            )
+            Text("Cancel", fontSize = 18.sp, color = Color.Red) // Set text color to red
+        }
+
 
         // Delete Account Confirmation Dialog
         if (showDeleteDialog) {
@@ -250,26 +315,34 @@ fun EditProfileScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            if (deletePassword == usuario.password) {
+                            // Ensure usuario is not null before accessing its properties
+                            if (usuario?.password == deletePassword) {
                                 val retrofitService = RetrofitService()
                                 val api = retrofitService.retrofit.create(UsuarioApi::class.java)
 
                                 CoroutineScope(Dispatchers.IO).launch {
                                     try {
-                                        val response = api.eliminarUsuario(usuario.id).execute()
-                                        if (response.isSuccessful) {
-                                            with(sharedPref.edit()) {
-                                                clear()
-                                                apply()
-                                            }
-                                            withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
-                                                context.startActivity(Intent(context, LoginActivity::class.java))
-                                                (context as? ComponentActivity)?.finish()
+                                        // Ensure usuario.id is not null before making the API call
+                                        if (usuario != null && usuario.id != null) {
+                                            val response = api.eliminarUsuario(usuario.id).execute()
+                                            if (response.isSuccessful) {
+                                                with(sharedPref.edit()) {
+                                                    clear()
+                                                    apply()
+                                                }
+                                                withContext(Dispatchers.Main) {
+                                                    Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+                                                    context.startActivity(Intent(context, LoginActivity::class.java))
+                                                    (context as? ComponentActivity)?.finish()
+                                                }
+                                            } else {
+                                                withContext(Dispatchers.Main) {
+                                                    Toast.makeText(context, "Deletion failed: ${response.message()}", Toast.LENGTH_SHORT).show()
+                                                }
                                             }
                                         } else {
                                             withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, "Deletion failed", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, "User data not available for deletion", Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                     } catch (e: Exception) {
@@ -325,11 +398,25 @@ fun ChangePasswordScreen(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.lococolor),
-            contentDescription = "App Logo",
-            modifier = Modifier.size(100.dp)
-        )
+        // Back Button for Change Password Screen
+        Box(modifier = Modifier.fillMaxWidth()) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back"
+                )
+            }
+            Image(
+                painter = painterResource(id = R.drawable.lococolor),
+                contentDescription = "App Logo",
+                modifier = Modifier
+                    .size(100.dp)
+                    .align(Alignment.TopCenter)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -390,7 +477,8 @@ fun ChangePasswordScreen(
             onClick = {
                 if (passwordError) return@Button
 
-                if (currentPassword != usuario.password) {
+                // Ensure usuario is not null before accessing its properties
+                if (usuario?.password != currentPassword) {
                     Toast.makeText(context, "Current password is incorrect", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
@@ -401,22 +489,30 @@ fun ChangePasswordScreen(
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val usuarioUpdate = UsuarioUpdate(password = newPassword)
-                        val response = api.actualizarUsuario(usuario.id, usuarioUpdate).execute()
+                        // Ensure usuario.id is not null before making the API call
+                        if (usuario != null && usuario.id != null) {
+                            val response = api.actualizarUsuario(usuario.id, usuarioUpdate).execute()
 
-                        if (response.isSuccessful) {
-                            usuario.password = newPassword
-                            with(sharedPref.edit()) {
-                                putString("usuario_guardado", Gson().toJson(usuario))
-                                apply()
-                            }
+                            if (response.isSuccessful) {
+                                // Update the local usuario object and SharedPreferences
+                                usuario.password = newPassword
+                                with(sharedPref.edit()) {
+                                    putString("usuario_guardado", Gson().toJson(usuario))
+                                    apply()
+                                }
 
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Password changed", Toast.LENGTH_SHORT).show()
-                                onBack()
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Password changed", Toast.LENGTH_SHORT).show()
+                                    onBack()
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Password change failed: ${response.message()}", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         } else {
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Password change failed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "User data not available for password change", Toast.LENGTH_SHORT).show()
                             }
                         }
                     } catch (e: Exception) {
@@ -439,24 +535,31 @@ fun ChangePasswordScreen(
                     newPassword.isNotEmpty() &&
                     confirmPassword.isNotEmpty()
         ) {
+            Icon(
+                imageVector = Icons.Filled.Save,
+                contentDescription = "Save Password Icon",
+                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            )
             Text("Save New Password", fontSize = 18.sp)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Cancel Button
-        Button(
+        // Cancel Button (Text Only, Red)
+        TextButton(
             onClick = onBack,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.LightGray,
-                contentColor = Color.Black
-            )
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Cancel", fontSize = 18.sp)
+            Icon(
+                imageVector = Icons.Filled.Cancel,
+                tint = Color.Red,
+                contentDescription = "Cancel Icon",
+                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            )
+            Text("Cancel", fontSize = 18.sp, color = Color.Red)
         }
     }
 }
