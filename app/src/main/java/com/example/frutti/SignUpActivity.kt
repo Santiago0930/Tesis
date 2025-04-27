@@ -391,10 +391,40 @@ fun SignUpScreen() {
                     keyboardActions = KeyboardActions(
                         onDone = {
                             keyboardController?.hide()
-                            if (allFieldsFilled && !passwordMatchError) {
-                                Toast.makeText(context, "Todo OK, pero no hay DB", Toast.LENGTH_SHORT).show()
-                                val intent = Intent(context, AnalyzeFruitActivity::class.java)
-                                context.startActivity(intent)
+                            if (!passwordMatchError && allFieldsFilled) {
+                                val retrofitService = RetrofitService()
+                                val api = retrofitService.retrofit.create(UsuarioApi::class.java)
+
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        val response = api.registrarUsuario(usuario).execute()
+                                        if (response.isSuccessful) {
+                                            val id = api.obtenerIdUsuario(usuario.email).execute()
+                                            usuario.id = id.body()
+                                            Log.d("SignUpScreen", "Datos del usuario: $usuario")
+                                            val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                                            with(sharedPref.edit()) {
+                                                putString("usuario_guardado", Gson().toJson(usuario))
+                                                apply()
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Usuario registrado correctamente", Toast.LENGTH_LONG).show()
+                                                val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                                context.startActivity(intent)
+                                            }
+                                        } else {
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
                             }
                         }
                     ),
