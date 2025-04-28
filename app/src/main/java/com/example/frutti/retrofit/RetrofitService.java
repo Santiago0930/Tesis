@@ -15,7 +15,8 @@ public class RetrofitService {
 
     private void initializeRetrofit() {
         retrofit = new Retrofit.Builder()
-                .baseUrl("http://ec2-18-118-226-24.us-east-2.compute.amazonaws.com:8080") // IP Amazon EC2
+                //baseUrl changes every time
+                .baseUrl("http://ec2-18-188-151-26.us-east-2.compute.amazonaws.com:8080") // IP Amazon EC2
                 .addConverterFactory(GsonConverterFactory.create(new Gson()))
                 .build();
     }
