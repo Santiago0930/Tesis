@@ -10,5 +10,5 @@ public class Fruta {
     private float precio;
     private String lugarAnalisis;
     private Date fechaAnalisis;
-    private Usuario usuario;
+    private Long usuarioId;
 }
