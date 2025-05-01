@@ -96,6 +96,7 @@ fun FruitDetailScreen(
             )
         }
 
+        // User Input Card
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -177,19 +178,35 @@ fun FruitDetailScreen(
                         options = storeOptions
                     )
 
-                    CustomTextField(
-                        label = "Purchase Price",
-                        value = price,
-                        isNumeric = true,
-                        onValueChange = { newValue -> price = newValue }
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Price (Left Column)
+                        Box(modifier = Modifier.weight(1f)) {
+                            CustomTextField(
+                                label = "Purchase Price",
+                                value = price,
+                                isNumeric = true,
+                                onValueChange = { price = it },
+                                modifier = Modifier
+                                    .height(77.dp)
+                            )
+                        }
 
-                    CustomTextField(
-                        label = "Weight (grams)",
-                        value = weight,
-                        isNumeric = true,
-                        onValueChange = { newValue -> weight = newValue }
-                    )
+                        // Weight (Right Column)
+                        Box(modifier = Modifier.weight(1f)) {
+                            CustomTextField(
+                                label = "Weight (grams)",
+                                value = weight,
+                                isNumeric = true,
+                                onValueChange = { weight = it },
+                                modifier = Modifier
+                                    .height(77.dp)
+                            )
+                        }
+                    }
+
 
                     CustomTextField(
                         label = "Date (DD/MM/YYYY)",
@@ -435,9 +452,10 @@ fun CustomTextField(
     label: String,
     value: String,
     isNumeric: Boolean = false,
-    isDate: Boolean = false,  // New parameter to identify date fields
+    isDate: Boolean = false, // New parameter to identify date fields
     onValueChange: (String) -> Unit,
-    context: Context = LocalContext.current
+    context: Context = LocalContext.current,
+    modifier: Modifier = Modifier // <<< ADDED HERE
 ) {
     if (isDate) {
         // Special handling for date fields
@@ -450,7 +468,7 @@ fun CustomTextField(
     } else {
         // Regular text field for other inputs
         Box(
-            modifier = Modifier
+            modifier = modifier // <<< USE the passed modifier here instead of hardcoded
                 .fillMaxWidth()
                 .background(Color.Gray.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
                 .padding(4.dp)
@@ -476,6 +494,7 @@ fun CustomTextField(
         }
     }
 }
+
 
 @Composable
 fun DatePickerField(
