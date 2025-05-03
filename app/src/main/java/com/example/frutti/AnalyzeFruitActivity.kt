@@ -495,13 +495,96 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
 
 @Composable
 fun MixedQualityScreen(navController: NavHostController?, fruitName: String = "This fruit") {
-    QualityResultScreen(
-        title = "Moderate Quality",
-        message = "$fruitName is edible but not at its best. You might want to consume it soon or use it in cooking.",
-        icon = Icons.Default.Info,
-        iconColor = Color(0xFFFFC107),
-        navController = navController
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .background(Color.White),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(322.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.confetti),
+                contentDescription = "Confetti Background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = 0.3f
+            )
+            Image(
+                painter = painterResource(id = R.drawable.sim), // Checkmark image
+                contentDescription = "Check",
+                modifier = Modifier
+                    .size(275.dp)
+                    .offset(y = 20.dp) // Moves the check image downward
+            )
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Text(
+            text = "Moderate Quality",
+            fontSize = 27.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "$fruitName is edible but not at its best.",
+            fontSize = 18.sp,
+            color = Color(0xFFFFC107),
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Consider consuming it soon or using it in cooking.",
+            fontSize = 16.sp,
+            color = Color.DarkGray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(28.dp))
+
+        Text(
+            text = "Please note: Results are not 100% accurate",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(44.dp))
+
+        Button(
+            onClick = { navController?.popBackStack() },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFFC107) // Amber color
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .padding(horizontal = 24.dp)
+        ) {
+            Text(
+                text = "Analyze Another Fruit",
+                fontSize = 20.sp,
+                color = Color.White
+            )
+        }
+    }
 }
 
 @Composable
