@@ -395,13 +395,102 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
 
 @Composable
 fun BadQualityScreen(navController: NavHostController?, fruitName: String = "This fruit") {
-    QualityResultScreen(
-        title = "Poor Quality",
-        message = "$fruitName is overripe or spoiled. It's better to avoid eating it for your health.",
-        icon = Icons.Default.Warning,
-        iconColor = Color(0xFFF44336),
-        navController = navController
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .background(Color.White),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Stacked images container with warning icon
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(322.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.confetti),
+                contentDescription = "Confetti Background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = 0.3f // Make background more subtle
+            )
+            Image(
+                painter = painterResource(id = R.drawable.ic_close), // Checkmark image
+                contentDescription = "Check",
+                modifier = Modifier
+                    .size(150.dp)
+                    .offset(y = 20.dp) // Moves the check image downward
+            )
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Main title with fruit name
+        Text(
+            text = "Poor Quality Detected",
+            fontSize = 27.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Specific warning message
+        Text(
+            text = "$fruitName appears overripe or spoiled.",
+            fontSize = 18.sp,
+            color = Color(0xFFF44336),
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Additional health warning
+        Text(
+            text = "For your health, we recommend avoiding this fruit.",
+            fontSize = 16.sp,
+            color = Color.DarkGray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(28.dp))
+
+        // Disclaimer text
+        Text(
+            text = "Please note: Results are not 100% accurate",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(44.dp))
+
+        // Action button
+        Button(
+            onClick = { navController?.popBackStack() },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFF44336) // Red color matching warning
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .padding(horizontal = 24.dp)
+        ) {
+            Text(
+                text = "Analyze Another Fruit",
+                fontSize = 20.sp,
+                color = Color.White
+            )
+        }
+    }
 }
 
 @Composable
