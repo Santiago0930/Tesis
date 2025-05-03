@@ -404,11 +404,11 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
                 alpha = 0.3f
             )
             Image(
-                painter = painterResource(id = R.drawable.ic_check), // Use your checkmark image
-                contentDescription = "Quality Check",
+                painter = painterResource(id = R.drawable.ic_check), // Checkmark image
+                contentDescription = "Check",
                 modifier = Modifier
-                    .size(275.dp)
-                    .offset(y = 20.dp)
+                    .size(150.dp)
+                    .offset(y = 20.dp) // Moves the check image downward
             )
         }
 
