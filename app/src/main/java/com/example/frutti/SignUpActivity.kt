@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
@@ -44,13 +45,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.frutti.ui.theme.FruttiTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import com.example.frutti.model.Usuario
 import com.example.frutti.retrofit.RetrofitService
 import com.example.frutti.retrofit.UsuarioApi
+import com.example.frutti.ui.theme.FruttiTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,29 +78,44 @@ class SignUpActivity : ComponentActivity() {
     }
 }
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen() {
-    var usuario by remember {
-        mutableStateOf(Usuario())
-    }
+    var usuario by remember { mutableStateOf(Usuario()) }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordMatchError by remember { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf(false) }
+    var ageError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     // Create focus references
-    val (usernameFocus, emailFocus, passwordFocus, confirmPasswordFocus, ageFocus) = remember { FocusRequester.createRefs() }
+    val (usernameFocus, emailFocus, passwordFocus, confirmPasswordFocus, ageFocus) = remember {
+        FocusRequester.createRefs()
+    }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Check if all fields are filled
-    val allFieldsFilled = usuario.nombre.isNotBlank() &&
-            usuario.email.isNotBlank() &&
-            usuario.password.isNotBlank() &&
+    // Validation functions
+    fun isValidEmail(email: String): Boolean {
+        return Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
+    fun isPasswordStrong(password: String): Boolean {
+        return password.length >= 6
+    }
+
+    fun isValidAge(age: Int): Boolean {
+        return age in 10..120
+    }
+
+    // Check if all fields are filled and valid
+    val allFieldsValid = usuario.nombre.isNotBlank() &&
+            usuario.email.isNotBlank() && isValidEmail(usuario.email) &&
+            usuario.password.isNotBlank() && isPasswordStrong(usuario.password) &&
             confirmPassword.isNotBlank() &&
-            usuario.edad > 0 &&
-            usuario.genero.isNotBlank()
+            isValidAge(usuario.edad) &&
+            usuario.genero.isNotBlank() &&
+            !passwordMatchError
 
     // Auto-focus username field when screen loads
     LaunchedEffect(Unit) {
@@ -185,7 +198,7 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Email Field
+            // Email Field (case insensitive)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,7 +207,10 @@ fun SignUpScreen() {
             ) {
                 TextField(
                     value = usuario.email,
-                    onValueChange = { usuario = usuario.copy(email = it.lowercase()) },
+                    onValueChange = {
+                        usuario = usuario.copy(email = it.lowercase())
+                        emailError = !isValidEmail(it)
+                    },
                     label = { Text("Email", color = Color.Black) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -202,7 +218,13 @@ fun SignUpScreen() {
                         imeAction = ImeAction.Next
                     ),
                     keyboardActions = KeyboardActions(
-                        onNext = { passwordFocus.requestFocus() }
+                        onNext = {
+                            if (isValidEmail(usuario.email)) {
+                                passwordFocus.requestFocus()
+                            } else {
+                                emailError = true
+                            }
+                        }
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -215,7 +237,16 @@ fun SignUpScreen() {
                         cursorColor = Color.Black,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
-                    )
+                    ),
+                )
+            }
+
+            if (emailError) {
+                Text(
+                    text = "Please enter a valid email address",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                 )
             }
 
@@ -270,7 +301,7 @@ fun SignUpScreen() {
                                 DropdownMenuItem(
                                     text = { Text(selectionOption) },
                                     onClick = {
-                                        usuario.genero = selectionOption
+                                        usuario = usuario.copy(genero = selectionOption)
                                         expanded = false
                                     }
                                 )
@@ -290,12 +321,12 @@ fun SignUpScreen() {
                         value = if (usuario.edad == 0) "" else usuario.edad.toString(),
                         onValueChange = {
                             if (it.isEmpty()) {
-                                usuario = usuario.copy(edad = 0)  // Store 0 but show empty string
+                                usuario = usuario.copy(edad = 0)
+                                ageError = false
                             } else if (it.matches(Regex("^\\d+$"))) {
                                 val ageValue = it.toInt()
-                                if (ageValue > 0) {  // Optional: Add validation for minimum age
-                                    usuario = usuario.copy(edad = ageValue)
-                                }
+                                usuario = usuario.copy(edad = ageValue)
+                                ageError = !isValidAge(ageValue)
                             }
                         },
                         label = { Text("Age", color = Color.Black) },
@@ -305,7 +336,13 @@ fun SignUpScreen() {
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(
-                            onNext = { passwordFocus.requestFocus() }
+                            onNext = {
+                                if (isValidAge(usuario.edad)) {
+                                    passwordFocus.requestFocus()
+                                } else {
+                                    ageError = true
+                                }
+                            }
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -318,9 +355,18 @@ fun SignUpScreen() {
                             cursorColor = Color.Black,
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black
-                        )
+                        ),
                     )
                 }
+            }
+
+            if (ageError) {
+                Text(
+                    text = "Please enter a valid age (10-120)",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -336,15 +382,24 @@ fun SignUpScreen() {
 
                 TextField(
                     value = usuario.password,
-                    onValueChange = { usuario = usuario.copy(password = it) },
-                    label = { Text("Password", color = Color.Black) },
+                    onValueChange = {
+                        usuario = usuario.copy(password = it)
+                        passwordError = !isPasswordStrong(it)
+                    },
+                    label = { Text("Password (min 6 chars)", color = Color.Black) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Next
                     ),
                     keyboardActions = KeyboardActions(
-                        onNext = { confirmPasswordFocus.requestFocus() }
+                        onNext = {
+                            if (isPasswordStrong(usuario.password)) {
+                                confirmPasswordFocus.requestFocus()
+                            } else {
+                                passwordError = true
+                            }
+                        }
                     ),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -366,7 +421,16 @@ fun SignUpScreen() {
                         cursorColor = Color.Black,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
-                    )
+                    ),
+                )
+            }
+
+            if (passwordError) {
+                Text(
+                    text = "Password must be at least 6 characters",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    //modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                 )
             }
 
@@ -383,7 +447,10 @@ fun SignUpScreen() {
 
                 TextField(
                     value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
+                    onValueChange = {
+                        confirmPassword = it
+                        passwordMatchError = it != usuario.password
+                    },
                     label = { Text("Confirm Password", color = Color.Black) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -393,40 +460,8 @@ fun SignUpScreen() {
                     keyboardActions = KeyboardActions(
                         onDone = {
                             keyboardController?.hide()
-                            if (!passwordMatchError && allFieldsFilled) {
-                                val retrofitService = RetrofitService()
-                                val api = retrofitService.retrofit.create(UsuarioApi::class.java)
-
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    try {
-                                        val response = api.registrarUsuario(usuario).execute()
-                                        if (response.isSuccessful) {
-                                            val id = api.obtenerIdUsuario(usuario.email).execute()
-                                            usuario.id = id.body()
-                                            Log.d("SignUpScreen", "Datos del usuario: $usuario")
-                                            val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                                            with(sharedPref.edit()) {
-                                                putString("usuario_guardado", Gson().toJson(usuario))
-                                                apply()
-                                            }
-                                            withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, "Usuario registrado correctamente", Toast.LENGTH_LONG).show()
-                                                val intent = Intent(context, AnalyzeFruitActivity::class.java)
-                                                context.startActivity(intent)
-                                            }
-                                        } else {
-                                            withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                        }
-                                    }
-                                }
-                            } else {
-                                Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
+                            if (allFieldsValid) {
+                                handleSignUp(context, usuario)
                             }
                         }
                     ),
@@ -454,7 +489,7 @@ fun SignUpScreen() {
                 )
             }
 
-            if (usuario.password.isNotEmpty() && confirmPassword.isNotEmpty() && usuario.password != confirmPassword) {
+            if (passwordMatchError) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 4.dp)
@@ -472,17 +507,14 @@ fun SignUpScreen() {
                         color = Color.Red
                     )
                 }
-                passwordMatchError = true
-            } else {
-                passwordMatchError = false
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Terms and Privacy Policy
             val annotatedText = buildAnnotatedString {
                 append("By continuing you agree to our ")
 
-                // Terms of Service link
                 pushStringAnnotation(tag = "TERMS", annotation = "https://docs.google.com/document/d/1BSwbORkGapA3NyvCHFcvWqP2IfhmnipBpVx_mbEWfJA/edit?usp=sharing")
                 withStyle(style = SpanStyle(color = Color(0xFF53B175), fontWeight = FontWeight.Bold)) {
                     append("Terms of Service")
@@ -491,7 +523,6 @@ fun SignUpScreen() {
 
                 append(" and ")
 
-                // Privacy Policy link
                 pushStringAnnotation(tag = "PRIVACY", annotation = "https://docs.google.com/document/d/1RE9ZRnGmMwDtsGQq2xhhIKfyt9YRPo_tKjeOSdDHXho/edit?usp=sharing")
                 withStyle(style = SpanStyle(color = Color(0xFF53B175), fontWeight = FontWeight.Bold)) {
                     append("Privacy Policy")
@@ -526,71 +557,35 @@ fun SignUpScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Box(
+            // Sign Up Button
+            Button(
+                onClick = {
+                    if (allFieldsValid) {
+                        handleSignUp(context, usuario)
+                    } else {
+                        Toast.makeText(context, "Please correct all errors", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF53B175),
+                    disabledContainerColor = Color(0xFFA0A0A0)
+                ),
+                shape = RoundedCornerShape(17.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .clickable(enabled = !(!allFieldsFilled || passwordMatchError)) {
-                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
-                    }
+                    .height(50.dp),
+                enabled = allFieldsValid
             ) {
-                Button(
-                    onClick = {
-                        val retrofitService = RetrofitService()
-                        val api = retrofitService.retrofit.create(UsuarioApi::class.java)
-
-                        if (!passwordMatchError && allFieldsFilled) {
-
-                            CoroutineScope(Dispatchers.IO).launch {
-                                try {
-                                    val response = api.registrarUsuario(usuario).execute()
-                                    if (response.isSuccessful) {
-                                        val id = api.obtenerIdUsuario(usuario.email).execute()
-                                        usuario.id = id.body()
-                                        Log.d("SignUpScreen", "Datos del usuario: $usuario") // 👈 Muestra en Logcat los datos del usuario
-                                        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                                        with(sharedPref.edit()) {
-                                            putString("usuario_guardado", Gson().toJson(usuario))  // Guarda el usuario como JSON
-                                            apply()
-                                        }
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "Usuario registrado correctamente", Toast.LENGTH_LONG).show()
-                                            val intent = Intent(context, AnalyzeFruitActivity::class.java)
-                                            context.startActivity(intent)
-                                        }
-                                    } else {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            }
-                        } else {
-                            Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF53B175),
-                        disabledContainerColor = Color(0xFFA0A0A0)
-                    ),
-                    shape = RoundedCornerShape(17.dp),
-                    modifier = Modifier.fillMaxSize(),
-                    enabled = !passwordMatchError && allFieldsFilled
-                ) {
-                    Text(
-                        text = "Sign Up",
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-                }
+                Text(
+                    text = "Sign Up",
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Login Link
             TextButton(onClick = {
                 val intent = Intent(context, LoginActivity::class.java)
                 context.startActivity(intent)
@@ -600,6 +595,59 @@ fun SignUpScreen() {
                     fontSize = 14.sp,
                     color = Color(0xFF53B175)
                 )
+            }
+        }
+    }
+}
+
+private fun handleSignUp(context: Context, usuario: Usuario) {
+    val retrofitService = RetrofitService()
+    val api = retrofitService.retrofit.create(UsuarioApi::class.java)
+
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            // First check if email already exists
+            //val checkResponse = api.checkEmailExists(usuario.email).execute()
+
+            //if (checkResponse.isSuccessful && checkResponse.body() == true) {
+                //withContext(Dispatchers.Main) {
+                    //Toast.makeText(context, "Email already registered", Toast.LENGTH_LONG).show()
+                //}
+                //return@launch
+            //}
+
+            // If email doesn't exist, proceed with registration
+            val response = api.registrarUsuario(usuario).execute()
+
+            if (response.isSuccessful) {
+                val id = api.obtenerIdUsuario(usuario.email).execute()
+                val registeredUser = usuario.copy(id = id.body())
+
+                Log.d("SignUpScreen", "User data: $registeredUser")
+                val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                with(sharedPref.edit()) {
+                    putString("usuario_guardado", Gson().toJson(registeredUser))
+                    apply()
+                }
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Registration successful!", Toast.LENGTH_LONG).show()
+                    val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                    context.startActivity(intent)
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    when (response.code()) {
+                        400 -> Toast.makeText(context, "Invalid request data", Toast.LENGTH_LONG).show()
+                        409 -> Toast.makeText(context, "Email already registered", Toast.LENGTH_LONG).show()
+                        else -> Toast.makeText(context, "Registration failed", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Log.e("SignUpScreen", "Registration error", e)
             }
         }
     }
