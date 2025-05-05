@@ -51,33 +51,79 @@ import kotlinx.coroutines.*
 import org.tensorflow.lite.support.image.TensorImage
 
 class AnalyzeFruitActivity : ComponentActivity() {
-    private lateinit var fruitClassifier: FruitQualityModelBinding
+    private var fruitClassifier: FruitClassifier? = null
     private val TAG = "AnalyzeFruitActivity"
+    private var modelInitializationComplete = false
+    private var initializationError: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
-            Log.d(TAG, "Initializing FruitQualityModelBinding")
-            fruitClassifier = FruitQualityModelBinding(this)
-            Log.d(TAG, "Classifier initialized successfully")
-
-            setContent {
-                FruttiTheme {
-                    MainNavigation(fruitClassifier)
-                }
+        // Set initial content showing loading state
+        setContent {
+            FruttiTheme {
+                LoadingScreen("Initializing fruit classifier...")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing model", e)
-            Toast.makeText(
-                this,
-                "Error loading model: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
+        }
 
-            setContent {
-                FruttiTheme {
-                    MainNavigation(null)
+        // Initialize OpenCV and classifier
+        initializeOpenCVAndClassifier()
+    }
+
+    private fun initializeOpenCVAndClassifier() {
+        // Initialize OpenCV first, then create the classifier
+        OpenCVInitializer.initOpenCV(this) {
+            try {
+                Log.d(TAG, "OpenCV initialized, now initializing FruitQualityModel")
+
+                // Initialize the classifier on a background thread
+                GlobalScope.launch(Dispatchers.IO) {
+                    try {
+                        fruitClassifier = FruitClassifier(this@AnalyzeFruitActivity)
+                        Log.d(TAG, "Classifier initialized successfully")
+
+                        // Update UI on main thread
+                        withContext(Dispatchers.Main) {
+                            modelInitializationComplete = true
+                            // Now that everything is initialized, set the content
+                            setContent {
+                                FruttiTheme {
+                                    MainNavigation(fruitClassifier)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error initializing model", e)
+                        initializationError = e.message
+
+                        // Update UI on main thread
+                        withContext(Dispatchers.Main) {
+                            modelInitializationComplete = true
+                            Toast.makeText(
+                                this@AnalyzeFruitActivity,
+                                "Error loading model: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            // Set content with error state
+                            setContent {
+                                FruttiTheme {
+                                    MainNavigation(null)
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in OpenCV callback", e)
+                modelInitializationComplete = true
+                initializationError = "OpenCV error: ${e.message}"
+
+                // Set content with error state
+                setContent {
+                    FruttiTheme {
+                        MainNavigation(null)
+                    }
                 }
             }
         }
@@ -85,9 +131,7 @@ class AnalyzeFruitActivity : ComponentActivity() {
 
     override fun onDestroy() {
         try {
-            if (::fruitClassifier.isInitialized) {
-                fruitClassifier.close()
-            }
+            fruitClassifier?.close()
         } catch (e: Exception) {
             Log.e(TAG, "Error closing model", e)
         }
@@ -95,10 +139,42 @@ class AnalyzeFruitActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun LoadingScreen(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFF53B175), Color(0xFF2E7D32))
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(60.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = message,
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyzeFruitScreen(
-    fruitClassifier: FruitQualityModelBinding? = null,
+    fruitClassifier: FruitClassifier? = null,
     navController: NavHostController? = null
 ) {
 
@@ -244,6 +320,7 @@ fun AnalyzeFruitScreen(
                 }
             }
 
+
             if (resultText != null) {
                 Card(
                     modifier = Modifier
@@ -262,6 +339,7 @@ fun AnalyzeFruitScreen(
                 }
             }
 
+
             if (isAnalyzing) {
                 CircularProgressIndicator(
                     color = Color.White,
@@ -273,6 +351,8 @@ fun AnalyzeFruitScreen(
                     fontWeight = FontWeight.Medium
                 )
             }
+
+
 
             Column(
                 modifier = Modifier
@@ -331,12 +411,14 @@ fun AnalyzeFruitScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
+
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
+
                             imageVector = Icons.Filled.Upload,
                             contentDescription = "Upload from Gallery",
                             tint = Color(0xFF53B175)
@@ -374,6 +456,7 @@ fun AnalyzeFruitScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("View History")
                     }
+
                 }
             }
 
@@ -734,7 +817,7 @@ fun QualityResultScreen(
 
 private fun analyzeImage(
     uri: Uri,
-    fruitClassifier: FruitQualityModelBinding?,
+    fruitClassifier: FruitClassifier?,
     scope: CoroutineScope,
     context: Context,
     navController: NavHostController?,
@@ -760,6 +843,7 @@ private fun analyzeImage(
                 Log.d(TAG, "Bitmap loaded. Classifying image...")
                 val classificationResult = fruitClassifier.classifyImage(bitmap)
                 Log.d(TAG, "Classification result: $classificationResult")
+
 
                 // Parse the classification result (format: "Fruit Quality (percentage%)")
                 val pattern = """([a-zA-Z]+)\s+([a-zA-Z]+)\s*\((\d+\.?\d*)%\)""".toRegex()
@@ -834,6 +918,7 @@ private fun analyzeImage(
                     } else {
                         Pair("Unknown", "Unknown format: $classificationResult")
                     }
+
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error analyzing image", e)
