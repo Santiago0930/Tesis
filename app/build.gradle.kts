@@ -41,7 +41,10 @@ android {
     }
     buildFeatures {
         compose = true
+        mlModelBinding = true
+
         viewBinding = true
+
         // mlModelBinding = true // Keep if used elsewhere, not strictly needed for this manual setup
     }
 
@@ -99,13 +102,14 @@ dependencies {
     implementation("com.google.ai.edge.litert:litert-support:1.2.0") // Replaces tensorflow-lite-support
     implementation("com.google.ai.edge.litert:litert-metadata:1.2.0") // For reading model metadata (optional but good practice)
     // Optional: GPU acceleration
-    // implementation("com.google.ai.edge.litert:litert-gpu:1.0.1")
-
+    implementation("com.google.ai.edge.litert:litert-gpu:1.0.1")
+    implementation ("org.opencv:opencv:4.9.0")
     // Coil for image loading (Keep your existing one - ensure version compatibility)
     implementation(libs.coil.compose.v240) // Example version, use your actual libs
 
     // Coroutines for asynchronous programming (Keep your existing one)
     implementation(libs.kotlinx.coroutines.android)
+
 
     // Testing dependencies (Keep your existing ones)
     testImplementation(libs.junit)
