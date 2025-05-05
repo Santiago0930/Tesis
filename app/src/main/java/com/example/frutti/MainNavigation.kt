@@ -3,25 +3,25 @@ package com.example.frutti
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.History
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
+import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 
 // Define Bottom Navigation Items
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
@@ -30,7 +30,6 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: 
     object History : BottomNavItem("history", Icons.Filled.History, "History")
 }
 
-// Bottom Navigation Bar UI
 @Composable
 fun BottomNavBar(navController: NavHostController) {
     val items = listOf(BottomNavItem.Home, BottomNavItem.Analyze, BottomNavItem.History)
@@ -54,7 +53,6 @@ fun BottomNavBar(navController: NavHostController) {
     }
 }
 
-// Get current route to highlight selected tab
 @Composable
 fun currentRoute(navController: NavHostController): String? {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -70,7 +68,6 @@ fun MainNavigation(fruitClassifier: FruitClassifier? = null) {
 
     val currentRoute = currentRoute(navController)
 
-    // Handle back press only on the Home screen
     if (currentRoute == BottomNavItem.Home.route) {
         BackHandler {
             if (backPressedOnce) {
@@ -86,7 +83,9 @@ fun MainNavigation(fruitClassifier: FruitClassifier? = null) {
     Scaffold(
         bottomBar = { BottomNavBar(navController) }
     ) { innerPadding ->
-        NavHostContainer(navController, Modifier.padding(innerPadding), fruitClassifier)
+        Box(modifier = Modifier.padding(innerPadding)) {
+            NavHostContainer(navController, Modifier, fruitClassifier)
+        }
     }
 }
 
@@ -129,5 +128,20 @@ fun NavHostContainer(
             val fruitName = backStackEntry.arguments?.getString("fruitName") ?: "Unknown"
             FruitDetailScreen(fruitName = fruitName)
         }
+
+        // ✅ Add result-quality destinations here INSIDE NavHost
+        composable("good_quality/{fruitName}") { backStackEntry ->
+            val fruitName = backStackEntry.arguments?.getString("fruitName") ?: "This fruit"
+            GoodQualityScreen(navController, fruitName)
+        }
+        composable("bad_quality/{fruitName}") { backStackEntry ->
+            val fruitName = backStackEntry.arguments?.getString("fruitName") ?: "This fruit"
+            BadQualityScreen(navController, fruitName)
+        }
+        composable("mixed_quality/{fruitName}") { backStackEntry ->
+            val fruitName = backStackEntry.arguments?.getString("fruitName") ?: "This fruit"
+            MixedQualityScreen(navController, fruitName)
+        }
+
     }
 }
