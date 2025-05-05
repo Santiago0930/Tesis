@@ -141,7 +141,7 @@ fun LoginScreen() {
             ) {
                 TextField(
                     value = usuario.email,
-                    onValueChange = { usuario = usuario.copy(email = it) },
+                    onValueChange = { usuario = usuario.copy(email = it.lowercase()) },
                     label = { Text("Email", color = Color.Gray) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -189,7 +189,7 @@ fun LoginScreen() {
                         onDone = {
                             keyboardController?.hide()
                             // Handle login when Enter is pressed
-                            if (usuario.email == testUser.email && usuario.password == testUser.password) {
+                            if (usuario.email.lowercase() == testUser.email.lowercase() && usuario.password == testUser.password) {
                                 // Test user login
                                 val testUserObj = Usuario(
                                     nombre = "Test User",
@@ -214,7 +214,7 @@ fun LoginScreen() {
                                 val api = retrofitService.retrofit.create(AuthApi::class.java)
                                 CoroutineScope(Dispatchers.IO).launch {
                                     try {
-                                        val response = api.login(usuario).execute()
+                                        val response = api.login(usuario.copy(email = usuario.email.lowercase())).execute()
                                         if (response.isSuccessful) {
                                             val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
                                             val usuarioStorage = api2.obtenerUsuario(usuario.email).execute()
@@ -314,7 +314,7 @@ fun LoginScreen() {
                         } else {
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
-                                    val response = api.login(usuario).execute()
+                                    val response = api.login(usuario.copy(email = usuario.email.lowercase())).execute()
                                     if (response.isSuccessful) {
                                         val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
                                         val usuarioStorage = api2.obtenerUsuario(usuario.email).execute();

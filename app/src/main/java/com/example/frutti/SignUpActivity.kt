@@ -194,7 +194,7 @@ fun SignUpScreen() {
             ) {
                 TextField(
                     value = usuario.email,
-                    onValueChange = { usuario = usuario.copy(email = it) },
+                    onValueChange = { usuario = usuario.copy(email = it.lowercase()) },
                     label = { Text("Email", color = Color.Black) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
