@@ -36,8 +36,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.material.icons.filled.Info
 import java.util.Calendar
 import android.app.DatePickerDialog
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.ui.platform.LocalContext
+import com.example.frutti.model.Fruta
+import com.example.frutti.model.Usuario
+import com.example.frutti.retrofit.FrutaApi
+import com.example.frutti.retrofit.RetrofitService
+import com.example.frutti.retrofit.UsuarioApi
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 
 class FruitDetailActivity : ComponentActivity() {
@@ -45,13 +60,13 @@ class FruitDetailActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Get both fruit name and ripeness from intent
-        val fruitName = intent.getStringExtra("FRUIT_NAME") ?: "Unknown Fruit"
-        val initialRipeness = intent.getStringExtra("INITIAL_RIPENESS") ?: "Good"
+        val fruitName = intent.getStringExtra("fruitName") ?: "Unknown"
+        val fruitState = intent.getStringExtra("fruitState") ?: "Unknown"
 
         setContent {
             FruitDetailScreen(
                 fruitName = fruitName,
-                initialRipeness = initialRipeness
+                initialRipeness = fruitState
             )
         }
     }
@@ -74,7 +89,20 @@ fun FruitDetailScreen(
     var date by remember { mutableStateOf("") }
     var ripeness by remember { mutableStateOf(initialRipeness) }
     val storeOptions = listOf("Carulla", "Exito", "D1", "Ara", "Other")
-    val ripenessOptions = listOf("Fresh", "Good", "Overripe")
+    val ripenessOptions = listOf("Fresca", "Madura", "Podrida")
+    var fruta by remember { mutableStateOf(Fruta()) }
+
+    LaunchedEffect(Unit) {
+        fruta = fruta.copy(
+            nombre = fruitName,
+            estado = initialRipeness
+        )
+    }
+
+    val context = LocalContext.current
+    val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    val usuarioJson = sharedPref.getString("usuario_guardado", null)
+    val usuario = Gson().fromJson(usuarioJson, Usuario::class.java)
 
     Column(
         modifier = Modifier
@@ -104,7 +132,7 @@ fun FruitDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = fruitName,
+                text = fruta.nombre,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E88E5),
@@ -144,7 +172,7 @@ fun FruitDetailScreen(
                                 color = Color.Black.copy(alpha = 0.6f)
                             )
                             Text(
-                                text = initialRipeness,
+                                text = fruta.estado,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = when(initialRipeness) {
@@ -174,7 +202,10 @@ fun FruitDetailScreen(
                 ) {
                     StoreDropdownMenu(
                         selectedStore = store,
-                        onStoreSelected = { store = it },
+                        onStoreSelected = {
+                            store = it
+                            fruta = fruta.copy(lugarAnalisis = it)
+                        },
                         options = storeOptions
                     )
 
@@ -188,9 +219,11 @@ fun FruitDetailScreen(
                                 label = "Purchase Price",
                                 value = price,
                                 isNumeric = true,
-                                onValueChange = { price = it },
-                                modifier = Modifier
-                                    .height(77.dp)
+                                onValueChange = {
+                                    price = it
+                                    fruta = fruta.copy(precio = it.toFloatOrNull() ?: 0f)
+                                },
+                                modifier = Modifier.height(77.dp)
                             )
                         }
 
@@ -200,7 +233,10 @@ fun FruitDetailScreen(
                                 label = "Weight (grams)",
                                 value = weight,
                                 isNumeric = true,
-                                onValueChange = { weight = it },
+                                onValueChange = {
+                                    weight = it
+                                    fruta = fruta.copy(peso = it.toFloatOrNull() ?: 0f)
+                                },
                                 modifier = Modifier
                                     .height(77.dp)
                             )
@@ -208,17 +244,30 @@ fun FruitDetailScreen(
                     }
 
 
+                    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
                     CustomTextField(
-                        label = "Date (DD/MM/YYYY)",
+                        label = "Date (yyyy-MM-dd)",
                         value = date,
-                        isDate = true,  // Use the date picker version
-                        onValueChange = { newValue -> date = newValue }
+                        isDate = true,
+                        onValueChange = { newValue ->
+                            date = newValue
+                            try {
+                                val parsedDate = LocalDate.parse(newValue, dateFormatter)
+                                fruta = fruta.copy(fechaAnalisis = parsedDate)
+                            } catch (e: DateTimeParseException) {
+                            }
+                        }
                     )
 
                     // User can modify the ripeness
                     RipenessDropdownMenu(
                         selectedRipeness = ripeness,
-                        onRipenessSelected = { ripeness = it },
+                        onRipenessSelected = {
+                            ripeness = it
+                            fruta = fruta.copy(estado = it)
+                        }
+                        ,
                         options = ripenessOptions,
                         label = "Your Ripeness Assessment"
                     )
@@ -228,7 +277,56 @@ fun FruitDetailScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             Button(
-                onClick = { /* Save action */ },
+                onClick = {
+                    val retrofitService = RetrofitService()
+                    val api = retrofitService.retrofit.create(FrutaApi::class.java)
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
+                            val idResponse = api2.obtenerIdUsuario(usuario.email).execute()
+                            val userId = idResponse.body()
+
+                            if (userId != null) {
+                                fruta.usuarioId = userId
+                                val response = api.registrarFruta(fruta).execute()
+                                Log.d("FruitDetailScreen", "Datos de la fruta: $fruta")
+
+                                if (response.isSuccessful) {
+                                    // Obtener el usuario actualizado
+                                    val usuarioResponse = api2.obtenerUsuario(usuario.email).execute()
+                                    val usuarioActualizado = usuarioResponse.body()
+
+                                    if (usuarioActualizado != null) {
+                                        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                                        with(sharedPref.edit()) {
+                                            putString("usuario_guardado", Gson().toJson(usuarioActualizado))
+                                            apply()
+                                        }
+                                    }
+
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Fruta registrada correctamente", Toast.LENGTH_LONG).show()
+                                        val intent = Intent(context, AnalyzeFruitActivity::class.java)
+                                        context.startActivity(intent)
+                                    }
+                                } else {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "No se pudo obtener el ID del usuario", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -515,10 +613,10 @@ fun DatePickerField(
             { _, selectedYear, selectedMonth, selectedDay ->
                 // Format the date as DD/MM/YYYY
                 val formattedDate = String.format(
-                    "%02d/%02d/%04d",
-                    selectedDay,
-                    selectedMonth + 1,  // Month is 0-based
-                    selectedYear
+                    "%04d-%02d-%02d", // yyyy-MM-dd
+                    selectedYear,
+                    selectedMonth + 1,
+                    selectedDay
                 )
                 onValueChange(formattedDate)
             },

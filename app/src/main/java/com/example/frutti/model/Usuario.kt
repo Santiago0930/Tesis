@@ -6,5 +6,6 @@ data class Usuario(
     var password: String = "",
     var nombre: String = "",
     var edad: Int = 0,
+    var frutasAnalizadas: Int = 0,
     var genero: String = ""
 )

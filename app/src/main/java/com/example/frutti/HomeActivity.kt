@@ -31,8 +31,17 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.DialogProperties
+import com.example.frutti.model.Fruta
 import com.example.frutti.model.Usuario
+import com.example.frutti.retrofit.FrutaApi
+import com.example.frutti.retrofit.RetrofitService
+import android.util.Log
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.Call
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,6 +91,35 @@ fun HomeScreen(username: String = "Guest") {
     val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
     val usuarioJson = sharedPref.getString("usuario_guardado", null)
     val usuario = Gson().fromJson(usuarioJson, Usuario::class.java)
+
+    var frutas by remember{
+        mutableStateOf<List<Fruta>>(emptyList())
+    }
+
+    // Estado para lista de frutas
+    val retrofitService = RetrofitService()
+    val frutaApi = retrofitService.retrofit.create(FrutaApi::class.java)
+
+    // Cargar frutas desde el backend
+    LaunchedEffect(Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = frutaApi.listarFrutas().execute()
+                if (response.isSuccessful) {
+                    val lista = response.body() ?: emptyList()
+                    Log.d("HomeScreen", "Frutas obtenidas: ${lista.joinToString { it.nombre }}")
+
+                    withContext(Dispatchers.Main) {
+                        frutas = lista
+                    }
+                } else {
+                    Log.e("HomeScreen", "Error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("HomeScreen", "Excepción al listar frutas: ${e.localizedMessage}")
+            }
+        }
+    }
 
     // Handle back press
     BackHandler {
@@ -204,7 +242,7 @@ fun HomeScreen(username: String = "Guest") {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "35",
+                        text = usuario.frutasAnalizadas.toString(),
                         fontSize = 40.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1E88E5),
@@ -224,21 +262,15 @@ fun HomeScreen(username: String = "Guest") {
 
             // Markets section
             Text(
-                text = "Best Markets for Fruits 🛒",
+                text = "Best Analyzed Fruits 🍓",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E88E5),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Markets list
-            val markets = listOf(
-                "XYZ Market" to Pair("Best Quality", "\$2.50"),
-                "ABC Store" to Pair("Affordable", "\$1.80"),
-                "FreshMart" to Pair("Organic", "\$3.00")
-            )
-
-            markets.forEach { (market, details) ->
+            // Lista de frutas analizadas
+            frutas.forEach { fruta ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -256,19 +288,24 @@ fun HomeScreen(username: String = "Guest") {
                     ) {
                         Column {
                             Text(
-                                text = market,
+                                text = fruta.nombre,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF1565C0)
                             )
                             Text(
-                                text = details.first,
+                                text = "State: ${fruta.estado}",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = "Location: ${fruta.lugarAnalisis}",
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )
                         }
                         Text(
-                            text = details.second,
+                            text = "$${fruta.precio}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1E88E5)

@@ -8,7 +8,6 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
-import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 
@@ -19,9 +18,6 @@ public interface FrutaApi {
 
     @GET("/fruta/listarFrutas")
     Call<List<Fruta>> listarFrutas();
-
-    @PATCH("/fruta/actualizarFruta/{id}")
-    Call<String> actualizarFruta(@Path("id") Long id, @Body Fruta fruta);
 
     @DELETE("/fruta/eliminar/{id}")
     Call<Void> eliminarFruta(@Path("id") Long id);

@@ -30,7 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -75,8 +74,6 @@ fun LoginScreen() {
     var usuario by remember {
         mutableStateOf(LoginRequest())
     }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
 
     // Create focus references
     val (emailFocus, passwordFocus) = remember { FocusRequester.createRefs() }
@@ -141,7 +138,7 @@ fun LoginScreen() {
             ) {
                 TextField(
                     value = usuario.email,
-                    onValueChange = { usuario = usuario.copy(email = it.lowercase()) },
+                    onValueChange = { usuario = usuario.copy(email = it) },
                     label = { Text("Email", color = Color.Gray) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -189,7 +186,7 @@ fun LoginScreen() {
                         onDone = {
                             keyboardController?.hide()
                             // Handle login when Enter is pressed
-                            if (usuario.email.lowercase() == testUser.email.lowercase() && usuario.password == testUser.password) {
+                            if (usuario.email == testUser.email && usuario.password == testUser.password) {
                                 // Test user login
                                 val testUserObj = Usuario(
                                     nombre = "Test User",
@@ -214,7 +211,7 @@ fun LoginScreen() {
                                 val api = retrofitService.retrofit.create(AuthApi::class.java)
                                 CoroutineScope(Dispatchers.IO).launch {
                                     try {
-                                        val response = api.login(usuario.copy(email = usuario.email.lowercase())).execute()
+                                        val response = api.login(usuario).execute()
                                         if (response.isSuccessful) {
                                             val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
                                             val usuarioStorage = api2.obtenerUsuario(usuario.email).execute()
@@ -263,21 +260,6 @@ fun LoginScreen() {
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Forgot Password
-            TextButton(
-                onClick = { showToast(context, "Coming Soon") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Forgot Password?",
-                    fontSize = 12.sp,
-                    color = Color(0xFFA82C2C),
-                    textAlign = TextAlign.Start
-                )
-            }
-
             Spacer(modifier = Modifier.height(32.dp))
 
             // Log In Button
@@ -314,7 +296,7 @@ fun LoginScreen() {
                         } else {
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
-                                    val response = api.login(usuario.copy(email = usuario.email.lowercase())).execute()
+                                    val response = api.login(usuario).execute()
                                     if (response.isSuccessful) {
                                         val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
                                         val usuarioStorage = api2.obtenerUsuario(usuario.email).execute();
