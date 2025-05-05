@@ -62,7 +62,7 @@ fun currentRoute(navController: NavHostController): String? {
 }
 
 @Composable
-fun MainNavigation(fruitClassifier: FruitQualityModelBinding? = null) {
+fun MainNavigation(fruitClassifier: FruitClassifier? = null) {
     val navController = rememberNavController()
     val context = LocalContext.current
     var backPressedOnce by remember { mutableStateOf(false) }
@@ -94,7 +94,7 @@ fun MainNavigation(fruitClassifier: FruitQualityModelBinding? = null) {
 fun NavHostContainer(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    fruitClassifier: FruitQualityModelBinding? = null
+    fruitClassifier: FruitClassifier? = null
 ) {
     val sampleFruits = remember {
         mutableStateListOf(

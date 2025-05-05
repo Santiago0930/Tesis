@@ -49,33 +49,79 @@ import kotlinx.coroutines.*
 import org.tensorflow.lite.support.image.TensorImage
 
 class AnalyzeFruitActivity : ComponentActivity() {
-    private lateinit var fruitClassifier: FruitQualityModelBinding
+    private var fruitClassifier: FruitClassifier? = null
     private val TAG = "AnalyzeFruitActivity"
+    private var modelInitializationComplete = false
+    private var initializationError: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
-            Log.d(TAG, "Initializing FruitQualityModelBinding")
-            fruitClassifier = FruitQualityModelBinding(this)
-            Log.d(TAG, "Classifier initialized successfully")
-
-            setContent {
-                FruttiTheme {
-                    MainNavigation(fruitClassifier)
-                }
+        // Set initial content showing loading state
+        setContent {
+            FruttiTheme {
+                LoadingScreen("Initializing fruit classifier...")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing model", e)
-            Toast.makeText(
-                this,
-                "Error loading model: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
+        }
 
-            setContent {
-                FruttiTheme {
-                    MainNavigation(null)
+        // Initialize OpenCV and classifier
+        initializeOpenCVAndClassifier()
+    }
+
+    private fun initializeOpenCVAndClassifier() {
+        // Initialize OpenCV first, then create the classifier
+        OpenCVInitializer.initOpenCV(this) {
+            try {
+                Log.d(TAG, "OpenCV initialized, now initializing FruitQualityModel")
+
+                // Initialize the classifier on a background thread
+                GlobalScope.launch(Dispatchers.IO) {
+                    try {
+                        fruitClassifier = FruitClassifier(this@AnalyzeFruitActivity)
+                        Log.d(TAG, "Classifier initialized successfully")
+
+                        // Update UI on main thread
+                        withContext(Dispatchers.Main) {
+                            modelInitializationComplete = true
+                            // Now that everything is initialized, set the content
+                            setContent {
+                                FruttiTheme {
+                                    MainNavigation(fruitClassifier)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error initializing model", e)
+                        initializationError = e.message
+
+                        // Update UI on main thread
+                        withContext(Dispatchers.Main) {
+                            modelInitializationComplete = true
+                            Toast.makeText(
+                                this@AnalyzeFruitActivity,
+                                "Error loading model: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            // Set content with error state
+                            setContent {
+                                FruttiTheme {
+                                    MainNavigation(null)
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in OpenCV callback", e)
+                modelInitializationComplete = true
+                initializationError = "OpenCV error: ${e.message}"
+
+                // Set content with error state
+                setContent {
+                    FruttiTheme {
+                        MainNavigation(null)
+                    }
                 }
             }
         }
@@ -83,9 +129,7 @@ class AnalyzeFruitActivity : ComponentActivity() {
 
     override fun onDestroy() {
         try {
-            if (::fruitClassifier.isInitialized) {
-                fruitClassifier.close()
-            }
+            fruitClassifier?.close()
         } catch (e: Exception) {
             Log.e(TAG, "Error closing model", e)
         }
@@ -93,10 +137,42 @@ class AnalyzeFruitActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun LoadingScreen(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFF53B175), Color(0xFF2E7D32))
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(60.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = message,
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyzeFruitScreen(
-    fruitClassifier: FruitQualityModelBinding? = null,
+    fruitClassifier: FruitClassifier? = null,
     navController: NavHostController? = null
 ) {
     val context = LocalContext.current
@@ -204,145 +280,145 @@ fun AnalyzeFruitScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-                    Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                    if (!modelAvailable) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFFCCCC)
-                            )
-                        ) {
-                            Text(
-                                text = "TensorFlow model could not be loaded. Classification unavailable.",
-                                color = Color.Red,
-                                modifier = Modifier.padding(16.dp),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(240.dp)
-                            .background(Color.White, shape = CircleShape)
-                            .border(4.dp, Color(0xFF53B175), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (imageUri != null) {
-                            Image(
-                                painter = rememberAsyncImagePainter(imageUri),
-                                contentDescription = "Selected Fruit Image",
-                                modifier = Modifier
-                                    .size(200.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.lococolor),
-                                contentDescription = "Default Image",
-                                modifier = Modifier.size(200.dp)
-                            )
-                        }
-                    }
-
-                    if (resultText != null) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                text = "Result: $resultText",
-                                modifier = Modifier.padding(16.dp),
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF53B175)
-                            )
-                        }
-                    }
-
-                    if (isAnalyzing) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(
-                            text = "Analyzing fruit quality...",
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CustomButton(
-                            text = "Take Photo",
-                            icon = Icons.Filled.CameraAlt,
-                            onClick = {
-                                if (permissionGranted) {
-                                    val newUri = createImageUri(context)
-                                    if (newUri != null) {
-                                        tempImageUri = newUri
-                                        takePictureLauncher.launch(newUri)
-                                    } else {
-                                        Toast.makeText(context, "Failed to create image URI", Toast.LENGTH_SHORT).show()
-                                    }
-                                } else {
-                                    requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-                                }
-                            },
-                            enabled = !isAnalyzing
-                        )
-
-                        CustomButton(
-                            text = "Upload from Gallery",
-                            icon = Icons.Filled.Upload,
-                            onClick = {
-                                pickImageLauncher.launch("image/*")
-                            },
-                            enabled = !isAnalyzing
-                        )
-
-                        OutlinedButton(
-                            onClick = {
-                                navController?.navigate(BottomNavItem.History.route)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            border = BorderStroke(2.dp, Color.White),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = Color.White
-                            ),
-                            enabled = !isAnalyzing
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.History,
-                                    contentDescription = "History"
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("View History")
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
+            if (!modelAvailable) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFCCCC)
+                    )
+                ) {
+                    Text(
+                        text = "TensorFlow model could not be loaded. Classification unavailable.",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp),
+                        fontWeight = FontWeight.Medium
+                    )
                 }
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(240.dp)
+                    .background(Color.White, shape = CircleShape)
+                    .border(4.dp, Color(0xFF53B175), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = "Selected Fruit Image",
+                        modifier = Modifier
+                            .size(200.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.lococolor),
+                        contentDescription = "Default Image",
+                        modifier = Modifier.size(200.dp)
+                    )
+                }
+            }
+
+            if (resultText != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Result: $resultText",
+                        modifier = Modifier.padding(16.dp),
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF53B175)
+                    )
+                }
+            }
+
+            if (isAnalyzing) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(48.dp)
+                )
+                Text(
+                    text = "Analyzing fruit quality...",
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                CustomButton(
+                    text = "Take Photo",
+                    icon = Icons.Filled.CameraAlt,
+                    onClick = {
+                        if (permissionGranted) {
+                            val newUri = createImageUri(context)
+                            if (newUri != null) {
+                                tempImageUri = newUri
+                                takePictureLauncher.launch(newUri)
+                            } else {
+                                Toast.makeText(context, "Failed to create image URI", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    },
+                    enabled = !isAnalyzing
+                )
+
+                CustomButton(
+                    text = "Upload from Gallery",
+                    icon = Icons.Filled.Upload,
+                    onClick = {
+                        pickImageLauncher.launch("image/*")
+                    },
+                    enabled = !isAnalyzing
+                )
+
+                OutlinedButton(
+                    onClick = {
+                        navController?.navigate(BottomNavItem.History.route)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    border = BorderStroke(2.dp, Color.White),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color.White
+                    ),
+                    enabled = !isAnalyzing
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.History,
+                            contentDescription = "History"
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("View History")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
     }
 }
 
@@ -360,7 +436,7 @@ fun createImageUri(context: Context): Uri? {
 
 private fun analyzeImage(
     uri: Uri,
-    fruitClassifier: FruitQualityModelBinding?,
+    fruitClassifier: FruitClassifier?,
     scope: CoroutineScope,
     context: Context,
     setAnalyzing: (Pair<Boolean, String?>) -> Unit
@@ -380,13 +456,21 @@ private fun analyzeImage(
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 Log.d(analyzeTag, "Bitmap loaded successfully, size: ${bitmap.width}x${bitmap.height}")
 
+                // Get all predictions for detailed logging
                 val allPredictions = fruitClassifier.getAllPredictions(bitmap)
                 Log.d(analyzeTag, "All predictions:")
                 allPredictions.forEachIndexed { index, prediction ->
                     Log.d(analyzeTag, "${index + 1}. ${prediction.first}: ${String.format("%.1f", prediction.second * 100)}%")
                 }
 
-                fruitClassifier.classifyImage(bitmap)
+                // Get the top prediction for display
+                val topPrediction = allPredictions.firstOrNull()
+                if (topPrediction != null) {
+                    val (label, confidence) = topPrediction
+                    "${label} (${String.format("%.1f", confidence * 100)}%)"
+                } else {
+                    "No prediction available"
+                }
             } catch (e: Exception) {
                 Log.e(analyzeTag, "Error analyzing image", e)
                 "Error analyzing image: ${e.message}"
