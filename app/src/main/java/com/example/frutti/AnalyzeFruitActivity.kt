@@ -5,6 +5,7 @@ import android.R.attr.text
 import android.content.ContentValues
 import android.content.ContentValues.TAG
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -46,6 +47,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
+import com.example.frutti.model.Fruta
+import com.example.frutti.model.Usuario
 import com.example.frutti.ui.theme.FruttiTheme
 import kotlinx.coroutines.*
 import org.tensorflow.lite.support.image.TensorImage
@@ -177,7 +180,6 @@ fun AnalyzeFruitScreen(
     fruitClassifier: FruitClassifier? = null,
     navController: NavHostController? = null
 ) {
-
 
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
@@ -320,7 +322,6 @@ fun AnalyzeFruitScreen(
                 }
             }
 
-
             if (resultText != null) {
                 Card(
                     modifier = Modifier
@@ -339,7 +340,6 @@ fun AnalyzeFruitScreen(
                 }
             }
 
-
             if (isAnalyzing) {
                 CircularProgressIndicator(
                     color = Color.White,
@@ -351,8 +351,6 @@ fun AnalyzeFruitScreen(
                     fontWeight = FontWeight.Medium
                 )
             }
-
-
 
             Column(
                 modifier = Modifier
@@ -411,14 +409,12 @@ fun AnalyzeFruitScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
-
                             imageVector = Icons.Filled.Upload,
                             contentDescription = "Upload from Gallery",
                             tint = Color(0xFF53B175)
@@ -431,35 +427,7 @@ fun AnalyzeFruitScreen(
                         )
                     }
                 }
-
-                OutlinedButton(
-                    onClick = {
-                        navController?.navigate("history")
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    border = BorderStroke(2.dp, Color.White),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.History,
-                            contentDescription = "History"
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("View History")
-                    }
-
-                }
             }
-
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -467,13 +435,21 @@ fun AnalyzeFruitScreen(
 
 @Composable
 fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "This fruit") {
+    val context = LocalContext.current // Para iniciar la nueva Activity
+
+    var fruta by remember {
+        mutableStateOf(Fruta())
+    }
+    fruta.nombre = fruitName
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState()) // Scroll habilitado
             .padding(16.dp)
             .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top // Ya no centramos verticalmente
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -487,11 +463,11 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
                 alpha = 0.3f
             )
             Image(
-                painter = painterResource(id = R.drawable.ic_check), // Checkmark image
+                painter = painterResource(id = R.drawable.ic_check),
                 contentDescription = "Check",
                 modifier = Modifier
                     .size(150.dp)
-                    .offset(y = 20.dp) // Moves the check image downward
+                    .offset(y = 20.dp)
             )
         }
 
@@ -509,9 +485,9 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "$fruitName is fresh and perfectly ripe!",
+            text = "${fruta.nombre} is fresh and perfectly ripe!",
             fontSize = 18.sp,
-            color = Color(0xFF4CAF50), // Green color for good quality
+            color = Color(0xFF4CAF50),
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 24.dp)
@@ -527,7 +503,7 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Text(
             text = "Please note: Results are not 100% accurate",
@@ -537,12 +513,13 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
-        Spacer(modifier = Modifier.height(44.dp))
+        Spacer(modifier = Modifier.height(25.dp))
 
+        // Botón para analizar otra fruta
         Button(
             onClick = { navController?.popBackStack() },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4CAF50) // Green color
+                containerColor = Color(0xFF4CAF50)
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
@@ -556,20 +533,57 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
                 color = Color.White
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                val fruitState = "Fresca"
+                val intent = Intent(context, FruitDetailActivity::class.java).apply {
+                    putExtra("fruitName", fruta.nombre)
+                    putExtra("fruitState", fruitState)
+                }
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF81C784) // Verde claro
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .padding(horizontal = 24.dp)
+        ) {
+            Text(
+                text = "Save Fruit",
+                fontSize = 20.sp,
+                color = Color.White
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
+
 @Composable
 fun BadQualityScreen(navController: NavHostController?, fruitName: String = "This fruit") {
+    val context = LocalContext.current
+
+    var fruta by remember {
+        mutableStateOf(Fruta())
+    }
+    fruta.nombre = fruitName
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState()) // Scroll habilitado
             .padding(16.dp)
             .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top // Ya no centramos verticalmente
     ) {
-        // Stacked images container with warning icon
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(322.dp)
@@ -579,20 +593,19 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
                 contentDescription = "Confetti Background",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
-                alpha = 0.3f // Make background more subtle
+                alpha = 0.3f
             )
             Image(
-                painter = painterResource(id = R.drawable.ic_close), // Checkmark image
+                painter = painterResource(id = R.drawable.ic_close),
                 contentDescription = "Check",
                 modifier = Modifier
                     .size(150.dp)
-                    .offset(y = 20.dp) // Moves the check image downward
+                    .offset(y = 20.dp)
             )
         }
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Main title with fruit name
         Text(
             text = "Poor Quality Detected",
             fontSize = 27.sp,
@@ -604,9 +617,8 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Specific warning message
         Text(
-            text = "$fruitName appears overripe or spoiled.",
+            text = "${fruta.nombre} appears overripe or spoiled.",
             fontSize = 18.sp,
             color = Color(0xFFF44336),
             fontWeight = FontWeight.SemiBold,
@@ -616,7 +628,6 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Additional health warning
         Text(
             text = "For your health, we recommend avoiding this fruit.",
             fontSize = 16.sp,
@@ -625,9 +636,8 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Disclaimer text
         Text(
             text = "Please note: Results are not 100% accurate",
             fontSize = 12.sp,
@@ -636,13 +646,12 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
-        Spacer(modifier = Modifier.height(44.dp))
+        Spacer(modifier = Modifier.height(25.dp))
 
-        // Action button
         Button(
             onClick = { navController?.popBackStack() },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF44336) // Red color matching warning
+                containerColor = Color(0xFFF44336)
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
@@ -656,8 +665,39 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
                 color = Color.White
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                val fruitState = "Podrida"
+                val intent = Intent(context, FruitDetailActivity::class.java).apply {
+                    putExtra("fruitName", fruta.nombre)
+                    putExtra("fruitState", fruitState)
+                }
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFD32F2F) // Rojo oscuro
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .padding(horizontal = 24.dp)
+        ) {
+            Text(
+                text = "Save Fruit",
+                fontSize = 20.sp,
+                color = Color.White
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp)) // espacio final para evitar corte
     }
 }
+
+
 
 @Composable
 fun MixedQualityScreen(navController: NavHostController?, fruitName: String = "This fruit") {
@@ -844,7 +884,6 @@ private fun analyzeImage(
                 val classificationResult = fruitClassifier.classifyImage(bitmap)
                 Log.d(TAG, "Classification result: $classificationResult")
 
-
                 // Parse the classification result (format: "Fruit Quality (percentage%)")
                 val pattern = """([a-zA-Z]+)\s+([a-zA-Z]+)\s*\((\d+\.?\d*)%\)""".toRegex()
                 val matchResult = pattern.find(classificationResult)
@@ -918,7 +957,6 @@ private fun analyzeImage(
                     } else {
                         Pair("Unknown", "Unknown format: $classificationResult")
                     }
-
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error analyzing image", e)

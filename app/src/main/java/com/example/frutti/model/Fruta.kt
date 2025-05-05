@@ -1,14 +1,14 @@
-package com.example.frutti.model;
+package com.example.frutti.model
 
-import java.sql.Date;
+import java.time.LocalDate
 
-public class Fruta {
-
-    private Long id;
-    private String nombre;
-    private Estado estado;
-    private float precio;
-    private String lugarAnalisis;
-    private Date fechaAnalisis;
-    private Long usuarioId;
-}
+data class Fruta(
+    var id: Long? = null,
+    var nombre: String = "",
+    var estado: String = "",
+    var precio: Float = 0.0f,
+    var peso: Float = 0.0f,
+    var lugarAnalisis: String = "",
+    var fechaAnalisis: LocalDate = LocalDate.now(),
+    var usuarioId: Long? = null,
+)
