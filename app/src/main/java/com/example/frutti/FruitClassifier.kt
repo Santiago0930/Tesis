@@ -176,13 +176,15 @@ class FruitClassifier(private val context: Context) {
             // --- Verify Image Processor ---
             // Normalization is crucial: [0, 255] -> [0.0, 1.0] matches Python's Rescaling(1.0/255)
             // In FruitClassifier.kt -> setupInterpreter() or where inputImageProcessor is defined:
+            // In FruitClassifier.kt -> setupInterpreter() or where inputImageProcessor is defined:
             inputImageProcessor = ImageProcessor.Builder()
                 .add(ResizeOp(inputHeight, inputWidth, ResizeOp.ResizeMethod.BILINEAR))
-                // Replace NormalizeOp(0.0f, 255.0f) with:
-                .add(NormalizeOp(127.5f, 127.5f)) // Scales to [-1, 1] range
+                // REMOVE THIS LINE: .add(NormalizeOp(127.5f, 127.5f))
+                // The TensorImage will load the bitmap. Ensure it's converted to FLOAT32
+                // if that's what the model's input tensor expects (which it likely does).
+                // TensorImage usually handles the cast to the required DataType.
                 .build()
-
-            Log.d(tag, "InputImageProcessor created: Resize(${inputHeight}x${inputWidth}, BILINEAR), Normalize(127.5, 127.5)") // Update log message
+            Log.d(tag, "InputImageProcessor created: Resize(${inputHeight}x${inputWidth}, BILINEAR) ONLY (Normalization handled by model)") // Update log
 
         } catch (e: Exception) {
             Log.e(tag, "Error initializing interpreter or ImageProcessor", e)
