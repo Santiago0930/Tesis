@@ -538,7 +538,7 @@ fun GoodQualityScreen(navController: NavHostController?, fruitName: String = "Th
 
         Button(
             onClick = {
-                val fruitState = "Fresca"
+                val fruitState = "Good"
                 val intent = Intent(context, FruitDetailActivity::class.java).apply {
                     putExtra("fruitName", fruta.nombre)
                     putExtra("fruitState", fruitState)
@@ -670,7 +670,7 @@ fun BadQualityScreen(navController: NavHostController?, fruitName: String = "Thi
 
         Button(
             onClick = {
-                val fruitState = "Podrida"
+                val fruitState = "Bad"
                 val intent = Intent(context, FruitDetailActivity::class.java).apply {
                     putExtra("fruitName", fruta.nombre)
                     putExtra("fruitState", fruitState)

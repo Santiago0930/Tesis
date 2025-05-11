@@ -19,13 +19,16 @@ public interface FrutaApi {
     @GET("/fruta/listarFrutas")
     Call<List<Fruta>> listarFrutas();
 
-    @DELETE("/fruta/eliminar/{id}")
-    Call<Void> eliminarFruta(@Path("id") Long id);
+    @DELETE("/fruta/eliminar/{idFruta}/{idUsuario}")
+    Call<Void> eliminarFruta(@Path("idFruta") Long idFruta, @Path("idUsuario") Long idUsuario);
 
     @GET("/fruta/historial/{id}")
     Call<List<Fruta>> obtenerHistorialFrutas(@Path ("id") Long id);
 
     @GET("/fruta/obtenerFruta/{idFruta}, {idUsuario}")
     Call<Fruta> obtenerFruta(@Path("idFruta") Long idFruta, @Path ("idUsuario") Long idUsuario);
+
+    @DELETE("/fruta/eliminarHistorial/{id}")
+    Call<Void> eliminarHistorial(@Path("id") Long id);
 
 }

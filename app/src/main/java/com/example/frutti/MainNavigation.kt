@@ -112,13 +112,7 @@ fun NavHostContainer(
             )
         }
         composable(BottomNavItem.History.route) {
-            ResultsHistoryScreen(
-                fruitList = sampleFruits,
-                onItemClick = { fruit ->
-                    navController.navigate("fruitDetail/${fruit.name}")
-                },
-                onClearHistory = { sampleFruits.clear() }
-            )
+            ResultsHistoryScreen()
         }
 
         composable(

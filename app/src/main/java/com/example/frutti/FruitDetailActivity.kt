@@ -9,10 +9,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -89,7 +85,7 @@ fun FruitDetailScreen(
     var date by remember { mutableStateOf("") }
     var ripeness by remember { mutableStateOf(initialRipeness) }
     val storeOptions = listOf("Carulla", "Exito", "D1", "Ara", "Other")
-    val ripenessOptions = listOf("Fresca", "Madura", "Podrida")
+    val ripenessOptions = listOf("Good", "Bad")
     var fruta by remember { mutableStateOf(Fruta()) }
 
     LaunchedEffect(Unit) {
@@ -146,10 +142,8 @@ fun FruitDetailScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = when(initialRipeness) {
-                            "Fresh" -> Color(0xFFE8F5E9)
-                            "Good" -> Color(0xFFE3F2FD)
-                            "Ripe" -> Color(0xFFFFF8E1)
-                            "Overripe" -> Color(0xFFFFEBEE)
+                            "Good" -> Color(0xFFE8F5E9)
+                            "Bad" -> Color(0xFFFFEBEE)
                             else -> Color(0xFFF5F5F5)
                         }
                     )
@@ -176,10 +170,8 @@ fun FruitDetailScreen(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = when(initialRipeness) {
-                                    "Fresh" -> Color(0xFF2E7D32)
-                                    "Good" -> Color(0xFF1565C0)
-                                    "Ripe" -> Color(0xFFF57F17)
-                                    "Overripe" -> Color(0xFFC62828)
+                                    "Good" -> Color(0xFF2E7D32)
+                                    "Bad" -> Color(0xFFC62828)
                                     else -> Color.Black
                                 }
                             )
