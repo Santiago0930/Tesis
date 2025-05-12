@@ -1,26 +1,34 @@
 package com.example.frutti
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.*
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.frutti.model.Fruta
@@ -34,310 +42,259 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-data class FruitItem(val name: String, val status: String, val image: Int, val isApproved: Boolean)
-
 class ResultsHistoryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            ResultsHistoryScreen()
         }
     }
 }
 
 @Composable
 fun ResultsHistoryScreen() {
-
     val context = LocalContext.current
     val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
     val usuarioJson = sharedPref.getString("usuario_guardado", null)
     val usuario = Gson().fromJson(usuarioJson, Usuario::class.java)
 
-    var frutas by remember{
-        mutableStateOf<List<Fruta>>(emptyList())
-    }
-
-    // Estado para lista de frutas
+    var frutas by remember { mutableStateOf<List<Fruta>>(emptyList()) }
     val retrofitService = RetrofitService()
     val frutaApi = retrofitService.retrofit.create(FrutaApi::class.java)
+    val usuarioApi = retrofitService.retrofit.create(UsuarioApi::class.java)
 
-    // Cargar frutas desde el backend
+    // Load frutas
     LaunchedEffect(Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = frutaApi.obtenerHistorialFrutas(usuario.id).execute()
                 if (response.isSuccessful) {
-                    val lista = response.body() ?: emptyList()
-                    Log.d("HomeScreen", "Frutas obtenidas: ${lista.joinToString { it.nombre }}")
-
-                    withContext(Dispatchers.Main) {
-                        frutas = lista
+                    response.body()?.let { lista ->
+                        withContext(Dispatchers.Main) {
+                            frutas = lista
+                        }
                     }
                 } else {
-                    Log.e("HomeScreen", "Error: ${response.code()}")
+                    Log.e("ResultsScreen", "Error ${response.code()}")
                 }
             } catch (e: Exception) {
-                Log.e("HomeScreen", "Excepción al listar frutas: ${e.localizedMessage}")
+                Log.e("ResultsScreen", "Error: ${e.localizedMessage}")
             }
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Background Image
+        // Background
         Image(
-            painter = painterResource(id = R.drawable.bg), // Ensure you have 'bg' in your drawable resources
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            painter = painterResource(id = R.drawable.bg),
+            contentDescription = "Background Image",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0x99FFFFFF)) // Semi-transparent white overlay for readability
+                .background(Color.White.copy(alpha = 0.65f))
                 .padding(16.dp)
         ) {
             Text(
                 text = "Results History",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .wrapContentWidth(Alignment.CenterHorizontally)
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF2E7D32),
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            // Decorative Card
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
-                elevation = CardDefaults.cardElevation(4.dp),
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Check the freshness status of your detected fruits.",
-                        fontSize = 14.sp,
-                        color = Color(0xFF2E7D32),
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
+            //Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(frutas) { fruta ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-                        elevation = CardDefaults.cardElevation(6.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = fruta.nombre,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1565C0)
-                                )
-                                Text(text = "Estado: ${fruta.estado}", fontSize = 14.sp, color = Color.DarkGray)
-                                Text(text = "Peso: ${fruta.peso} gm", fontSize = 14.sp, color = Color.DarkGray)
-                                Text(text = "Precio: $${fruta.precio}", fontSize = 14.sp, color = Color.DarkGray)
-                                Text(text = "Lugar: ${fruta.lugarAnalisis}", fontSize = 14.sp, color = Color.DarkGray)
-                                Text(text = "Fecha: ${fruta.fechaAnalisis}", fontSize = 12.sp, color = Color.Gray)
-                            }
-
-                            IconButton(
-                                onClick = { CoroutineScope(Dispatchers.IO).launch {
-                                    try {
-                                        val eliminarResponse = frutaApi.eliminarFruta(fruta.id, usuario.id).execute()
-                                        if (eliminarResponse.isSuccessful) {
-
-                                            // 1. Actualizar lista de frutas en UI
-                                            withContext(Dispatchers.Main) {
-                                                frutas = frutas.filterNot { it.id == fruta.id }
-                                                Toast.makeText(context, "Fruta eliminada", Toast.LENGTH_SHORT).show()
-                                            }
-
-                                            // 2. Obtener el usuario actualizado
-                                            val usuarioResponse = retrofitService.retrofit
-                                                .create(UsuarioApi::class.java).
-                                                obtenerUsuario(usuario.email).execute()
-                                            if (usuarioResponse.isSuccessful) {
-                                                val usuarioActualizado = usuarioResponse.body()
-                                                if (usuarioActualizado != null) {
-                                                    withContext(Dispatchers.Main) {
-                                                        // Guardar en SharedPreferences
-                                                        sharedPref.edit()
-                                                            .putString("usuario_guardado", Gson().toJson(usuarioActualizado))
-                                                            .apply()
-                                                    }
-                                                }
-                                            }
-
-                                        } else {
-                                            withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, "Error al eliminar fruta", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                }
-                                },
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .padding(start = 8.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_close), // Asegúrate de tener este ícono
-                                    contentDescription = "Eliminar fruta",
-                                    tint = Color.Red
-                                )
-                            }
-                        }
+                    FruitCard(fruta, usuario, frutaApi, usuarioApi, sharedPref, context) {
+                        frutas = frutas.filterNot { it.id == fruta.id }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Button(
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
-                            val eliminarResponse = frutaApi.eliminarHistorial(usuario.id).execute()
-                            if (eliminarResponse.isSuccessful) {
-                                // Luego de borrar, pedimos el usuario actualizado
-                                val usuarioResponse = retrofitService.retrofit
-                                    .create(UsuarioApi::class.java)
-                                    .obtenerUsuario(usuario.email)
-                                    .execute()
-
-                                if (usuarioResponse.isSuccessful) {
-                                    val usuarioActualizado = usuarioResponse.body()
-
-                                    withContext(Dispatchers.Main) {
-                                        frutas = emptyList()
-
-                                        // Guardamos el usuario actualizado
-                                        if (usuarioActualizado != null) {
-                                            sharedPref.edit()
-                                                .putString("usuario_guardado", Gson().toJson(usuarioActualizado))
-                                                .apply()
-                                        }
-
-                                        Toast.makeText(context, "Historial eliminado", Toast.LENGTH_SHORT).show()
-                                    }
-                                } else {
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Historial eliminado, pero no se pudo actualizar usuario", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            } else {
+                            val eliminar = frutaApi.eliminarHistorial(usuario.id).execute()
+                            if (eliminar.isSuccessful) {
+                                val userUpdated = usuarioApi.obtenerUsuario(usuario.email).execute()
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Error al eliminar historial", Toast.LENGTH_SHORT).show()
+                                    frutas = emptyList()
+                                    userUpdated.body()?.let {
+                                        sharedPref.edit()
+                                            .putString("usuario_guardado", Gson().toJson(it))
+                                            .apply()
+                                    }
+                                    Toast.makeText(context, "Historial eliminado", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
-                }
-                ,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71E20)),
-                shape = RoundedCornerShape(17.dp),
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp)
                     .height(50.dp)
             ) {
-                Text(text = "Clean History", color = Color.White, fontSize = 18.sp)
+                Text("Clean History", fontSize = 18.sp, color = Color.White)
             }
 
-
-
-            Spacer(modifier = Modifier.height(32.dp)) // Extra space at the bottom
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
-
 @Composable
-fun FruitListItem(fruit: FruitItem, onItemClick: (FruitItem) -> Unit) {
-    val context = LocalContext.current
-
-    Column( // Cambiado de Row a Column para permitir más espacio
+fun FruitCard(
+    fruta: Fruta,
+    usuario: Usuario,
+    frutaApi: FrutaApi,
+    usuarioApi: UsuarioApi,
+    sharedPref: SharedPreferences,
+    context: Context,
+    onDelete: () -> Unit
+) {
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp) // Aumentar el padding vertical para más separación
-            .clickable { navigateToFruitDetail(
-                context = context,
-                fruitName = fruit.name,
-                ripeness = fruit.status
-            )
-            }
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .animateContentSize()
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp)),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Spacer(modifier = Modifier.height(8.dp)) // Más espacio entre elementos
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
-        )
-        {
-            Image(
-                painter = painterResource(id = fruit.image),
-                contentDescription = fruit.name,
-                modifier = Modifier.size(50.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = fruit.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text(text = fruit.status, color = if (fruit.isApproved) Color.Green else Color.Red)
-            }
-            Image(
-                painter = painterResource(id = if (fruit.isApproved) R.drawable.ic_check else R.drawable.ic_close),
-                contentDescription = if (fruit.isApproved) "Approved" else "Not Approved",
+        ) {
+
+// 🖼️ Imagen o ícono de fruta
+            Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .padding(end = 8.dp)
-            )
-            Icon(
-                painter = painterResource(id = R.drawable.ic_arrow_right),
-                contentDescription = "More Info",
-                modifier = Modifier.size(24.dp)
-            )
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE8F5E9)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_fruit), // Replace with fruta.imagenUrl if available
+                    contentDescription = "Fruta",
+                    tint = Color(0xFF66BB6A),
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // 🧾 Detalles de la fruta
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        fruta.nombre,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1B5E20)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // 🏷️ Badge para estado
+                    Text(
+                        text = fruta.estado,
+                        fontSize = 12.sp,
+                        color = Color.White,
+                        modifier = Modifier
+                            .background(
+                                when (fruta.estado) {
+                                    "Good" -> Color(0xFF43A047)
+                                    "Bad" -> Color(0xFFF44336)
+                                    else -> Color.Gray
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "💰 $${fruta.precio}",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFE64A19)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                InfoLine("⚖️ Peso", "${fruta.peso}g")
+                InfoLine("📍 Lugar", fruta.lugarAnalisis)
+                InfoLine("📅 Fecha", fruta.fechaAnalisis.toString(), fontSize = 12.sp)
+            }
+
+            // 🗑️ Botón de eliminar con animación y ripple
+            IconButton(
+                onClick = {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val eliminar = frutaApi.eliminarFruta(fruta.id, usuario.id).execute()
+                            if (eliminar.isSuccessful) {
+                                val userUpdated = usuarioApi.obtenerUsuario(usuario.email).execute()
+                                withContext(Dispatchers.Main) {
+                                    onDelete()
+                                    userUpdated.body()?.let {
+                                        sharedPref.edit()
+                                            .putString("usuario_guardado", Gson().toJson(it))
+                                            .apply()
+                                    }
+                                    Toast.makeText(context, "🍓 Fruta eliminada", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "⚠️ No se pudo eliminar", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "💥 Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFFEBEE))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar fruta",
+                    tint = Color.Red
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(8.dp)) // Más espacio entre elementos
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun PreviewFruitListItem() {
-    val sampleFruit = FruitItem("Strawberry", "Fresh", R.drawable.ic_fruit, true)
-    FruitListItem(fruit = sampleFruit, onItemClick = {})
+fun InfoLine(label: String, value: String, fontSize: TextUnit = 14.sp, color: Color = Color.DarkGray) {
+    Text(
+        text = "$label: $value",
+        fontSize = fontSize,
+        color = color,
+        modifier = Modifier.padding(vertical = 1.dp)
+    )
 }
