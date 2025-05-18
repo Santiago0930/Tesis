@@ -84,7 +84,7 @@ fun LoginScreen() {
         emailFocus.requestFocus()
     }
 
-    // Test user credentials
+    // Test user credentials (email in lowercase for comparison)
     val testUser = LoginRequest(
         email = "Dayro@gol.com",
         password = "ONC"
@@ -148,7 +148,7 @@ fun LoginScreen() {
                     keyboardActions = KeyboardActions(
                         onNext = { passwordFocus.requestFocus() }
                     ),
-                    textStyle = TextStyle(color = Color.Black), // Set text color to black
+                    textStyle = TextStyle(color = Color.Black),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(emailFocus),
@@ -158,8 +158,8 @@ fun LoginScreen() {
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         cursorColor = Color.Black,
-                        focusedTextColor = Color.Black, // Ensure focused text is black
-                        unfocusedTextColor = Color.Black // Ensure unfocused text is black
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
                     )
                 )
             }
@@ -186,7 +186,8 @@ fun LoginScreen() {
                         onDone = {
                             keyboardController?.hide()
                             // Handle login when Enter is pressed
-                            if (usuario.email == testUser.email && usuario.password == testUser.password) {
+                            if (usuario.email.equals(testUser.email, ignoreCase = true) &&
+                                usuario.password == testUser.password) {
                                 // Test user login
                                 val testUserObj = Usuario(
                                     nombre = "Test User",
@@ -206,15 +207,17 @@ fun LoginScreen() {
                                 val intent = Intent(context, AnalyzeFruitActivity::class.java)
                                 context.startActivity(intent)
                             } else if (usuario.email.isNotEmpty() && usuario.password.isNotEmpty()) {
-                                // Regular login attempt
+                                // Regular login attempt with case-insensitive email
                                 val retrofitService = RetrofitService()
                                 val api = retrofitService.retrofit.create(AuthApi::class.java)
+                                val loginRequest = usuario.copy(email = usuario.email.lowercase())
+
                                 CoroutineScope(Dispatchers.IO).launch {
                                     try {
-                                        val response = api.login(usuario).execute()
+                                        val response = api.login(loginRequest).execute()
                                         if (response.isSuccessful) {
                                             val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
-                                            val usuarioStorage = api2.obtenerUsuario(usuario.email).execute()
+                                            val usuarioStorage = api2.obtenerUsuario(loginRequest.email).execute()
                                             usuarioStorage.body()!!.password = usuario.password
                                             Log.d("LoginScreen", "Datos del usuario: ${usuarioStorage.body()}")
                                             val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -265,13 +268,13 @@ fun LoginScreen() {
             // Log In Button
             Button(
                 onClick = {
-                    if (usuario.email == testUser.email && usuario.password == testUser.password) {
+                    if (usuario.email.equals(testUser.email, ignoreCase = true) &&
+                        usuario.password == testUser.password) {
                         // Create a test user object
                         val testUserObj = Usuario(
                             nombre = "Test User",
                             email = testUser.email,
                             password = testUser.password,
-                            // Add other required fields with dummy data
                             edad = 30,
                             genero = "Male"
                         )
@@ -288,7 +291,7 @@ fun LoginScreen() {
                         val intent = Intent(context, AnalyzeFruitActivity::class.java)
                         context.startActivity(intent)
                     } else {
-                        // Original login logic
+                        // Original login logic with case-insensitive email
                         val retrofitService = RetrofitService()
                         val api = retrofitService.retrofit.create(AuthApi::class.java)
                         if (usuario.email.isEmpty() || usuario.password.isEmpty()) {
@@ -296,10 +299,11 @@ fun LoginScreen() {
                         } else {
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
-                                    val response = api.login(usuario).execute()
+                                    val loginRequest = usuario.copy(email = usuario.email.lowercase())
+                                    val response = api.login(loginRequest).execute()
                                     if (response.isSuccessful) {
                                         val api2 = retrofitService.retrofit.create(UsuarioApi::class.java)
-                                        val usuarioStorage = api2.obtenerUsuario(usuario.email).execute();
+                                        val usuarioStorage = api2.obtenerUsuario(loginRequest.email).execute()
                                         usuarioStorage.body()!!.password = usuario.password
                                         Log.d("LoginScreen", "Datos del usuario: ${usuarioStorage.body()}")
                                         val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
