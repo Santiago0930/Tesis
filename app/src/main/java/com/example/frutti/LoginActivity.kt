@@ -86,7 +86,7 @@ fun LoginScreen() {
 
     // Test user credentials (email in lowercase for comparison)
     val testUser = LoginRequest(
-        email = "Dayro@gol.com",
+        email = "dayro@gol.com",
         password = "ONC"
     )
 
