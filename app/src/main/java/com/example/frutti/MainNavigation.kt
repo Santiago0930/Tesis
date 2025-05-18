@@ -95,13 +95,6 @@ fun NavHostContainer(
     modifier: Modifier = Modifier,
     fruitClassifier: FruitClassifier? = null
 ) {
-    val sampleFruits = remember {
-        mutableStateListOf(
-            FruitItem("Apple", "Fresh", R.drawable.ic_fruit, true),
-            FruitItem("Banana", "Overripe", R.drawable.ic_fruit, false),
-            FruitItem("Mango", "Good", R.drawable.ic_fruit, true)
-        )
-    }
 
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) { HomeScreen() }
