@@ -29,7 +29,7 @@ public class RetrofitService {
 
 
         retrofit = new Retrofit.Builder()
-                .baseUrl("http://ec2-18-116-62-7.us-east-2.compute.amazonaws.com:8080") // IP Amazon EC2
+                .baseUrl("http://ec2-18-191-186-91.us-east-2.compute.amazonaws.com:8080") // IP Amazon EC2
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
     }

@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -67,13 +66,10 @@ fun EditUserInfoScreen() {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
 
-    // Define the navigation action for back/cancel
     val navigateBackToHome = {
-        val intent = Intent(context, HomeActivity::class.java) // Navigate to HomeActivity
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Clear back stack
-        context.startActivity(intent)
-        activity?.finish() // Finish the current activity
+        activity?.finish() // Simplemente cierra la actividad actual
     }
+
 
     // Background Image
     Box(modifier = Modifier.fillMaxSize()) {
@@ -511,9 +507,9 @@ fun ChangePasswordScreen(
                             apply()
                         }
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Contraseña actualizado correctamente", Toast.LENGTH_LONG).show()
-                            context.startActivity(Intent(context, HomeActivity::class.java))
-                            (context as? ComponentActivity)?.finish()
+                            Toast.makeText(context, "Contraseña actualizada correctamente", Toast.LENGTH_LONG).show()
+                            onBack()
+
                         }
                     } else {
                         withContext(Dispatchers.Main) {
