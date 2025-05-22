@@ -35,13 +35,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -171,6 +175,7 @@ fun LoadingScreen(message: String) {
                 fontWeight = FontWeight.Medium
             )
         }
+
     }
 }
 
@@ -180,7 +185,6 @@ fun AnalyzeFruitScreen(
     fruitClassifier: FruitClassifier? = null,
     navController: NavHostController? = null
 ) {
-
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -188,6 +192,8 @@ fun AnalyzeFruitScreen(
     var isAnalyzing by remember { mutableStateOf(false) }
     var modelAvailable by remember { mutableStateOf(fruitClassifier != null) }
     var resultText by remember { mutableStateOf<String?>(null) }
+    var showHelpDialog by remember { mutableStateOf(false) }
+    var showPhotoInstructions by remember { mutableStateOf(true) } // Show instructions by default
     val coroutineScope = rememberCoroutineScope()
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -248,6 +254,156 @@ fun AnalyzeFruitScreen(
         }
     }
 
+    // Photo Instructions Dialog
+    if (showPhotoInstructions) {
+        AlertDialog(
+            onDismissRequest = { showPhotoInstructions = false },
+            title = {
+                Text(
+                    text = "How to Take a Good Photo",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF53B175)
+                )
+            },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        text = "For best results:",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text("• Ensure good lighting")
+                    Text("• Place the fruit in the center of the frame")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Example of a good photo:",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    val customAlignment = Alignment { parentSize, childSize, _ ->
+                        val yOffset = (parentSize.height - childSize.height) * -0.7f // 0.5 would be center, 1.0 would be bottom
+                        IntOffset(0, yOffset.toInt())
+                    }
+
+                    Image(
+                        painter = painterResource(id = R.drawable.img_helper),
+                        contentDescription = "Example photo",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop,
+                        alignment = customAlignment
+                    )
+
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Compatible Fruits:",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
+                    )
+                    Text("• Apple")
+                    Text("• Banana")
+                    Text("• Lime")
+                    Text("• Guava")
+                    Text("• Pomegranate")
+                    Text("• Orange")
+
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showPhotoInstructions = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF53B175)
+                    )
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+
+    // Help Dialog
+    if (showHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showHelpDialog = false },
+            title = {
+                Text(
+                    text = "Help",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF53B175)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .fillMaxWidth()
+                ) {
+                    // Instructions
+                    Text(
+                        text = "How to use Frutti:",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text("• Take a clear photo of your fruit")
+                    Text("• The app will analyze its quality")
+                    Text("• Get instant results about freshness")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Compatible Fruits
+                    Text(
+                        text = "Compatible Fruits:",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Text("• Apple\n• Banana\n• Lime\n• Guava\n• Pomegranate\n• Orange")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Note
+                    Text(
+                        text = "Note: Results are estimates based on visual analysis.",
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        fontSize = 14.sp
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://drive.google.com/file/d/1arXG2I-m0hFeSkCErDNTWJTodtXg9LoA/view?usp=drive_link")
+                        )
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Text("Open User Manual", color = Color(0xFF53B175))
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showHelpDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF53B175))
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+
+
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -260,7 +416,18 @@ fun AnalyzeFruitScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF53B175)
-                )
+                ),
+                actions = {
+                    IconButton(
+                        onClick = { showHelpDialog = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Help,
+                            contentDescription = "Help",
+                            tint = Color.White
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->
