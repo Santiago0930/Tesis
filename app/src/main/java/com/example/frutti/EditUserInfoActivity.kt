@@ -396,9 +396,13 @@ fun ChangePasswordScreen(
     var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    val passwordError = newPassword.isNotEmpty() &&
+    val passwordMismatchError = newPassword.isNotEmpty() &&
             confirmPassword.isNotEmpty() &&
             newPassword != confirmPassword
+
+    val passwordLengthError = (newPassword.isNotEmpty() && newPassword.length < 6) ||
+            (confirmPassword.isNotEmpty() && confirmPassword.length < 6) ||
+            (currentPassword.isNotEmpty() && currentPassword.length < 6)
 
     Column(
         modifier = Modifier
@@ -459,9 +463,19 @@ fun ChangePasswordScreen(
             onVisibilityToggle = { confirmPasswordVisible = !confirmPasswordVisible }
         )
 
-        if (passwordError) {
+        if (passwordMismatchError) {
             Text(
                 text = "Passwords don't match",
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .align(Alignment.Start)
+            )
+        }
+
+        if (passwordLengthError) {
+            Text(
+                text = "Passwords must be at least 6 characters",
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier
                     .padding(top = 8.dp)
@@ -475,7 +489,7 @@ fun ChangePasswordScreen(
         Button(
             onClick = {
                 Log.d("usuario1", "Datos del usuario: $usuario")
-                if (passwordError) return@Button
+                if (passwordMismatchError || passwordLengthError) return@Button
 
                 // Ensure usuario is not null before accessing its properties
                 if (usuario?.password != currentPassword) {
@@ -488,40 +502,39 @@ fun ChangePasswordScreen(
 
                 Log.d("SignUpScreen", "Datos del usuario antiguo: $usuario")
                 CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    if (currentPassword != usuario.password) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Incorrect current password", Toast.LENGTH_LONG).show()
+                    try {
+                        if (currentPassword != usuario.password) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Incorrect current password", Toast.LENGTH_LONG).show()
+                            }
+                        } else {
+                            if (newPassword.isNotBlank()) {
+                                usuario.password = newPassword
+                            }
                         }
-                    } else {
-                        if (newPassword.isNotBlank()) {
-                            usuario.password = newPassword
-                        }
-                    }
-                    Log.d("SignUpScreen", "Datos del usuario nuevo: $usuario")
+                        Log.d("SignUpScreen", "Datos del usuario nuevo: $usuario")
 
-                    val response = api.actualizarContraseña(usuario.id, newPassword).execute()
-                    if (response.isSuccessful) {
-                        with(sharedPref.edit()) {
-                            putString("usuario_guardado", Gson().toJson(usuario))  // Guarda el usuario como JSON
-                            apply()
+                        val response = api.actualizarContraseña(usuario.id, newPassword).execute()
+                        if (response.isSuccessful) {
+                            with(sharedPref.edit()) {
+                                putString("usuario_guardado", Gson().toJson(usuario))  // Guarda el usuario como JSON
+                                apply()
+                            }
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Contraseña actualizada correctamente", Toast.LENGTH_LONG).show()
+                                onBack()
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
+                            }
                         }
+                    } catch (e: Exception) {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Contraseña actualizada correctamente", Toast.LENGTH_LONG).show()
-                            onBack()
-
+                            Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Excepción: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                     }
                 }
-            }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -531,10 +544,11 @@ fun ChangePasswordScreen(
                 containerColor = Color(0xFF53B175),
                 contentColor = Color.White
             ),
-            enabled = !passwordError &&
-                    currentPassword.isNotEmpty() &&
-                    newPassword.isNotEmpty() &&
-                    confirmPassword.isNotEmpty()
+            enabled = !passwordMismatchError &&
+                    !passwordLengthError &&
+                    currentPassword.length >= 6 &&
+                    newPassword.length >= 6 &&
+                    confirmPassword.length >= 6
         ) {
             Icon(
                 imageVector = Icons.Filled.Save,
@@ -564,6 +578,7 @@ fun ChangePasswordScreen(
         }
     }
 }
+
 
 @Composable
 fun CustomField(value: String, onValueChange: (String) -> Unit, label: String) {
