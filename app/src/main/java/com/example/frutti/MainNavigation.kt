@@ -63,21 +63,48 @@ fun currentRoute(navController: NavHostController): String? {
 fun MainNavigation(fruitClassifier: FruitClassifier? = null) {
     val navController = rememberNavController()
     val context = LocalContext.current
-    var backPressedOnce by remember { mutableStateOf(false) }
-    val handler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
-
+    var backPressedTime by remember { mutableStateOf(0L) }
+    var showExitDialog by remember { mutableStateOf(false) }
     val currentRoute = currentRoute(navController)
 
+    // Handle back press only when on home screen
     if (currentRoute == BottomNavItem.Home.route) {
-        BackHandler {
-            if (backPressedOnce) {
-                (context as? ComponentActivity)?.finish()
+        BackHandler(enabled = true) {
+            if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                // Second back press within 2 seconds - show dialog
+                showExitDialog = true
             } else {
-                backPressedOnce = true
+                // First back press - show toast
                 Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
-                handler.postDelayed({ backPressedOnce = false }, 2000)
+                backPressedTime = System.currentTimeMillis()
             }
         }
+    }
+
+    // Exit confirmation dialog
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Exit App") },
+            text = { Text("Are you sure you want to exit?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Exit the app completely
+                        (context as? ComponentActivity)?.finishAffinity()
+                    }
+                ) {
+                    Text("EXIT", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text("CANCEL")
+                }
+            }
+        )
     }
 
     Scaffold(

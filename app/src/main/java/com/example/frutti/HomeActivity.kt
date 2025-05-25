@@ -1,7 +1,9 @@
 package com.example.frutti
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -28,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.os.Process
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.DialogProperties
@@ -87,6 +90,48 @@ fun HomeScreen(username: String = "Guest") {
     // State for exit confirmation dialog
     var showExitDialog by remember { mutableStateOf(false) }
     var backPressedTime by remember { mutableStateOf(0L) }
+
+    BackHandler {
+        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+            // Second back press within 2 seconds
+            showExitDialog = true
+        } else {
+            // First back press
+            Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+            backPressedTime = System.currentTimeMillis()
+        }
+    }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Exit App") },
+            text = { Text("Are you sure you want to exit the app?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Complete exit solution
+                        (context as? Activity)?.let { activity ->
+                            activity.finishAffinity() // Close all activities
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                activity.finishAndRemoveTask() // Remove from recent apps
+                            }
+                            Process.killProcess(Process.myPid()) // Force kill process
+                        }
+                    }
+                ) {
+                    Text("EXIT", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text("CANCEL")
+                }
+            }
+        )
+    }
 
     val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
     val usuarioJson = sharedPref.getString("usuario_guardado", null)
