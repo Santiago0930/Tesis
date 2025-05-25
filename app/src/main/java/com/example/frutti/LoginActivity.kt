@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.addCallback
 import androidx.compose.foundation.Image
@@ -47,13 +48,28 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class LoginActivity : ComponentActivity() {
+    private var backPressedTime = 0L
+    private val backPressThreshold = 2000L // 2 seconds
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Prevent back navigation
-        onBackPressedDispatcher.addCallback(this) {
-            // Do nothing, effectively disabling the back button
-        }
+        // Custom back press handling
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (backPressedTime + backPressThreshold > System.currentTimeMillis()) {
+                    // If second back press within threshold, exit app
+                    finishAffinity()
+                } else {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Press back again to exit",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    backPressedTime = System.currentTimeMillis()
+                }
+            }
+        })
 
         setContent {
             FruttiTheme {

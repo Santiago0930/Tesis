@@ -36,7 +36,7 @@ val Typography = Typography(
 )
 
 val mplus = FontFamily(
-    Font(R.font.mplus1pregular),
-    Font(R.font.mplus1pbold)
+    Font(R.font.mplus1p_regular),
+    Font(R.font.mplus1p_bold)
 
 )

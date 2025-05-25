@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="Theme.Frutti" parent="Theme.MaterialComponents.DayNight">
+        <item name="android:fontFamily">@font/mplus1p_family</item>
+        <item name="fontFamily">@font/mplus1p_family</item>
 
-    <style name="Theme.Frutti" parent="android:Theme.Material.Light.NoActionBar" />
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Frutti" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- This now works because it's defined -->
+        <item name="android:textAppearance">@style/TextAppearance.App.Body</item>
     </style>
 </resources>

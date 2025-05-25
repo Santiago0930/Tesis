@@ -57,6 +57,32 @@ import com.example.frutti.ui.theme.FruttiTheme
 import kotlinx.coroutines.*
 import org.tensorflow.lite.support.image.TensorImage
 
+object GlobalStates {
+    // Initial value false - no dialog shown yet
+    val showPhotoInstructions = mutableStateOf(false)
+}
+
+
+@Composable
+fun rememberShowPhotoInstructions(): MutableState<Boolean> {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("frutti_prefs", Context.MODE_PRIVATE)
+
+    val hasShownThisSession = prefs.getBoolean("photo_instructions_shown_this_session", false)
+
+    val shouldShow = remember { mutableStateOf(!hasShownThisSession) }
+
+    if (shouldShow.value) {
+        LaunchedEffect(Unit) {
+            prefs.edit().putBoolean("photo_instructions_shown_this_session", true).apply()
+        }
+    }
+
+    return shouldShow
+}
+
+
+
 class AnalyzeFruitActivity : ComponentActivity() {
     private var fruitClassifier: FruitClassifier? = null
     private val TAG = "AnalyzeFruitActivity"
@@ -193,7 +219,7 @@ fun AnalyzeFruitScreen(
     var modelAvailable by remember { mutableStateOf(fruitClassifier != null) }
     var resultText by remember { mutableStateOf<String?>(null) }
     var showHelpDialog by remember { mutableStateOf(false) }
-    var showPhotoInstructions by remember { mutableStateOf(true) } // Show instructions by default
+    val showPhotoInstructions = rememberShowPhotoInstructions()
     val coroutineScope = rememberCoroutineScope()
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -255,9 +281,9 @@ fun AnalyzeFruitScreen(
     }
 
     // Photo Instructions Dialog
-    if (showPhotoInstructions) {
+    if (GlobalStates.showPhotoInstructions.value) {
         AlertDialog(
-            onDismissRequest = { showPhotoInstructions = false },
+            onDismissRequest = { GlobalStates.showPhotoInstructions.value = false },
             title = {
                 Text(
                     text = "How to Take a Good Photo",
@@ -318,7 +344,7 @@ fun AnalyzeFruitScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { showPhotoInstructions = false },
+                    onClick = { GlobalStates.showPhotoInstructions.value = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF53B175)
                     )
