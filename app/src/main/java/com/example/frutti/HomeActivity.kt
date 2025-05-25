@@ -163,7 +163,17 @@ fun HomeScreen(username: String = "Guest") {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(
                         onClick = {
+                            // Clear preferences but keep last shown timestamp
+                            val lastShown = sharedPref.getLong("photo_instructions_last_shown", 0L)
+                            GlobalStates.showPhotoInstructions.value = true
+
                             sharedPref.edit().clear().apply()
+
+                            sharedPref.edit()
+                                .putLong("photo_instructions_last_shown", lastShown)
+                                .putBoolean("photo_instructions_shown_this_session", false) // Reset dialog flag
+                                .apply()
+
                             val intent = Intent(context, LoginActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             context.startActivity(intent)
@@ -183,6 +193,7 @@ fun HomeScreen(username: String = "Guest") {
                     }
                     Text(text = "Log Out", fontSize = 12.sp, color = Color(0xFFE53935))
                 }
+
 
                 Text(
                     text = "Welcome, ${usuario?.nombre ?: "Guest"} 👋",

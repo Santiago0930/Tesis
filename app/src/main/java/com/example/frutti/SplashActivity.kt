@@ -32,7 +32,7 @@ class SplashActivity : ComponentActivity() {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish() // Cierra la SplashActivity para que no vuelva atrás
-        }, 3000)
+        }, 1000)
 
         setContent {
             SplashScreen()
